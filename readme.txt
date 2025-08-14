@@ -1,27 +1,30 @@
-Lokalen Server starten und Seite laden
+📚 Lesekids – Interaktive Leseförderung mit jsPsych, Node.js und R
+
+Lesekids ist eine Webanwendung zur Leseförderung für Kinder.
+Sie kombiniert Lesetests, adaptives Feedback und statistische Auswertung von Itemparametern.
+Die App nutzt Node.js als Backend, SQLite als Datenbank und R (TAM-Paket) zur IRT-basierten Modellschätzung.
 
 
-1) im Terminal (PowerShell) 
+🚀 Features
 
-cd "C:\Users\mulrlude\Documents\App lesekids\lesekids_2.0"
-node --env-file=.env server.js
-npm start
+Interaktive Lesetests mit mehrstufigen Aufgaben
 
-2) im Browser öffnen
-http://localhost:3000?id=0001
+Automatisches Feedback bei falschen Antworten
 
+Text-to-Speech Unterstützung
 
+Speicherung aller Antworten in einer SQLite-Datenbank
 
-Datenbank öffnen: 
-öffnen: DB Browser for SQLite 
-Datei → Datenbank öffnen…
-jspsych-local-test/data/test.db
+Serverseitige Berechnung von Fähigkeitsparametern (θ) mit R und dem TAM-Paket
 
-SELECT * FROM results;
+Fortschrittsanzeige zu Beginn und Ende jeder Session
 
+🛠️ Technologie-Stack
 
+Frontend: jsPsych für interaktive Experimente
 
-http://localhost:3000/pages/manuale-scoring.html?scorer=Ulrich
+Backend: Node.js + Express
 
+Datenbank: SQLite
 
-Droplet Passwort: xBLEKXz8sepeSdvs
+Statistik: R + TAM-Paket
