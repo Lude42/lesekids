@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Manuelles Scoring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/jspsych/dist/jspsych.css" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+    .task { background:#f6f7fb; padding:16px; border-radius:12px; margin-bottom:24px; }
+    .answer { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #eee; }
+    .answer:last-child { border-bottom:none; }
+    .badge { font-size:12px; padding:2px 8px; border-radius:10px; background:#eee; }
+    .badge.need { background:#ffe9b3; }
+    .badge.third { background:#ffd0d6; }
+    .muted { color:#666; font-size:12px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .sticky { position:sticky; top:0; background:#fff; padding:8px 0; }
+    .btn { padding:6px 10px; border:1px solid #ddd; border-radius:8px; cursor:pointer; background:#fff; }
+    .btn[disabled] { opacity:0.5; cursor:default; }
+    .ok { color:#1a7f37; }
+    .err { color:#b32222; }
+  </style>
+</head>
+<body>
+<div class="sticky">
+  <div class="row">
+    <div>Scorer-ID: <b id="scorerLabel"></b></div>
+    <button id="saveAllBtn" class="btn" disabled>Speichern (0)</button>
+    <button id="refreshBtn" class="btn">Aktualisieren</button>
+  </div>
+  <p class="muted">Bewerte Antworten, die <span class="badge need">noch 1./2. Urteil</span> brauchen oder bei <span class="badge third">Uneinigkeit (3. Urteil)</span>.</p>
+</div>
+
+  <div id="tasks"></div>
+
+  <!-- Items als JS laden -->
+<script src="/js/items.js"></script>
+<script type="module" src="/js/manuale-scoring.js"></script>
+</body>
+</html>

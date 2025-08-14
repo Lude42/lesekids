@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My experiment</title>
+    <script src="jspsych/dist/jspsych.js"></script>
+    <script src="jspsych/dist/plugin-html-button-response.js"></script>
+    <link href="jspsych/dist/jspsych.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body></body>
+<script>
+var exp_start_time = "AN";
+var a = "AN";
+var date1 = new Date 
+
+const jsPsych = initJsPsych();
+  
+var timeline_variables = [
+      {
+        item: 42,
+        que: "<p align='left'>Weil es zur Frühstückspause geklingelt hat ... Warum teilt Susi ihr Brötchen?</p>",
+        opt: ["Weil sie Karin helfen will.","Weil sie wenig Hunger hat.","Weil sie ihr Frühstück immer teilt.","Weil Frühstückspause ist."],
+        cor: "0"
+      },
+      {
+        item: 106,
+        que: "<p align='left'>Lukas und Paul wollen Fußballprofis werden ... Warum holt Paul eine Leiter aus dem Keller?</p>",
+        opt: ["Weil er Fußballprofi werden möchte.","Weil sie mit dem Ball nach draußen gehen wollen.","Weil er ohne Leiter nicht an den Ball heran kommt.","Weil er den Ball auf dem Schrank verstecken will."],
+        cor: "0"
+      }
+    ];
+
+var node = {
+  timeline_variables: timeline_variables,
+  margin_vertical: '8px',
+  timeline: [
+    {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: jsPsych.timelineVariable('que', true),
+      choices: jsPsych.timelineVariable('opt', true),
+      data: {
+        item: jsPsych.timelineVariable('item', true),
+        correct_response: jsPsych.timelineVariable('cor', true)
+      },
+      on_finish: function(data) {
+        data.correct = data.response == data.correct_response;
+      },
+	  loop_function: function(data) {
+    const last = data.values().slice(-1)[0];
+    return !last.correct; // Wiederholen, bis korrekt
+  }
+    }
+  ],
+  randomize_order: false, // oder true, wenn du möchtest
+
+};
+
+    jsPsych.run([node]);
+  </script>
+</html>

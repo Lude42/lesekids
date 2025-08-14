@@ -1,0 +1,18 @@
+.div-2 {
+        background-color: #ABBAEA;
+		max-width: 700px;      /* maximale Breite */
+		margin: 0 auto;        /* zentriert */
+    }
+	
+.div-3 {
+        background-color: #ABEAB5;
+		max-width: 700px;      /* maximale Breite */
+		margin: 0 auto;        /* zentriert */
+    }
+	
+.text-container {
+      max-width: 700px;      /* maximale Breite */
+      margin: 0 auto;        /* zentriert */
+      padding: 20px;         /* Innenabstand */
+      line-height: 1.6;      /* bessere Lesbarkeit */
+    }

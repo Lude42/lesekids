@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Feedback nach Zeit & Korrektheit</title>
+    <script src="jspsych/dist/jspsych.js"></script>
+    <script src="jspsych/dist/plugin-html-button-response.js"></script>
+    <link href="jspsych/dist/jspsych.css" rel="stylesheet" />
+  </head>
+  <body></body>
+  <script>
+    const jsPsych = initJsPsych();
+
+    const timeline_variables = [
+      {
+        item: 1,
+        que: "Warum teilt Susi ihr Brötchen?",
+		gue2: "Warum teilt Susi ihr Brötchen?"
+        opt: [
+          "Weil sie Karin helfen will.",
+          "Weil sie wenig Hunger hat.",
+          "Weil sie ihr Frühstück immer teilt.",
+          "Weil Frühstückspause ist."
+        ],
+        cor: 0
+      },
+      {
+        item: 2,
+        que: "Warum holt Paul eine Leiter aus dem Keller?",
+        opt: [
+          "Weil er Fußballprofi werden möchte.",
+          "Weil sie mit dem Ball nach draußen gehen wollen.",
+          "Weil er ohne Leiter nicht an den Ball heran kommt.",
+          "Weil er den Ball auf dem Schrank verstecken will."
+        ],
+        cor: 2
+      }
+    ];
+
+    const main_timeline = [];
+
+    timeline_variables.forEach((trial_data) => {
+      const loop_node = {
+        timeline: [
+          {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: trial_data.que,
+            choices: trial_data.opt,
+            data: {
+              item: trial_data.item,
+              correct_response: trial_data.cor
+            },
+            on_finish: function (data) {
+              data.correct = data.response == data.correct_response;
+              data.rt_fast = data.rt < 5000;
+            }
+          },
+          {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: function () {
+              const last = jsPsych.data.get().last(1).values()[0];
+
+              if (last.rt_fast) {
+                return "<p style='color:orange;'>Halt, versuch dich besser auf den Inhalt zu konzentrieren.</p><p>Drücke eine Taste, um fortzufahren.</p>";
+              } else if (last.correct) {
+                return "<p style='color:green;'>Richtig! Gut gemacht.</p><p>Drücke eine Taste, um fortzufahren.</p>";
+              } else {
+                return "<p style='color:red;'>Leider falsch. Versuch es noch einmal.</p><p>Drücke eine Taste, um fortzufahren.</p>";
+              }
+            },
+            choices: ["Weiter"]
+          }
+        ],
+        loop_function: function () {
+          const last = jsPsych.data.get().last(2).values()[0];
+          // Wiederhole, wenn:
+          // a) Antwort falsch ODER
+          // b) Antwort zu schnell (auch wenn richtig)
+          return !(last.correct && !last.rt_fast);
+        }
+      };
+
+      main_timeline.push(loop_node);
+    });
+
+    jsPsych.run(main_timeline);
+  </script>
+</html>

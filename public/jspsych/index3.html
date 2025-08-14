@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>2 Versuche pro Frage</title>
+    <script src="jspsych/dist/jspsych.js"></script>
+    <script src="jspsych/dist/plugin-html-button-response.js"></script>
+    <link href="jspsych/dist/jspsych.css" rel="stylesheet" />
+  </head>
+  <body></body>
+  <script>
+    const jsPsych = initJsPsych();
+
+    const timeline_variables = [
+      {
+        item: 1,
+        que: "Warum teilt Susi ihr Brötchen?",
+        opt: [
+          "Weil sie Karin helfen will.",
+          "Weil sie wenig Hunger hat.",
+          "Weil sie ihr Frühstück immer teilt.",
+          "Weil Frühstückspause ist."
+        ],
+        cor: 0
+      },
+      {
+        item: 2,
+        que: "Warum holt Paul eine Leiter aus dem Keller?",
+        opt: [
+          "Weil er Fußballprofi werden möchte.",
+          "Weil sie mit dem Ball nach draußen gehen wollen.",
+          "Weil er ohne Leiter nicht an den Ball heran kommt.",
+          "Weil er den Ball auf dem Schrank verstecken will."
+        ],
+        cor: 2
+      }
+    ];
+
+    const main_timeline = [];
+
+    timeline_variables.forEach((trial_data) => {
+      let incorrect_response_index = null;
+      let answered_correctly = false;
+
+      const question1 = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: trial_data.que,
+        choices: trial_data.opt,
+        data: {
+          item: trial_data.item,
+          correct_response: trial_data.cor,
+          attempt: 1
+        },
+        on_finish: function (data) {
+          data.correct = data.response == data.correct_response;
+          if (!data.correct) {
+            incorrect_response_index = data.response;
+          } else {
+            answered_correctly = true;
+          }
+        }
+      };
+
+      const feedback1 = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: "<p style='color:red;'>Leider falsch. Du hast noch einen Versuch.</p><p>Drücke eine Taste, um fortzufahren.</p>",
+        choices: ["Weiter"],
+        conditional_function: () => {
+          const last = jsPsych.data.get().last(1).values()[0];
+          return !last.correct;
+        }
+      };
+
+      const question2 = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: trial_data.que,
+        choices: trial_data.opt,
+        data: {
+          item: trial_data.item,
+          correct_response: trial_data.cor,
+          attempt: 2
+        },
+        conditional_function: () => {
+          const firstTry = jsPsych.data.get().filter({ item: trial_data.item, attempt: 1 }).values()[0];
+          return !firstTry.correct;
+        },
+        on_finish: function (data) {
+          data.response_original_index = data.response;
+          data.correct = data.response === trial_data.cor;
+        }
+      };
+
+      const feedback2 = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: function () {
+          const last = jsPsych.data.get().last(1).values()[0];
+          return last.correct
+            ? "<p style='color:green;'>Richtig! Gut gemacht.</p><p>Drücke eine Taste, um fortzufahren.</p>"
+            : "<p style='color:red;'>Leider falsch. Die richtige Antwort war: " +
+                trial_data.opt[trial_data.cor] +
+                "</p><p>Drücke eine Taste, um fortzufahren.</p>";
+        },
+        choices: ["Weiter"],
+        conditional_function: () => {
+          const firstTry = jsPsych.data.get().filter({ item: trial_data.item, attempt: 1 }).values()[0];
+          return !firstTry.correct;
+        }
+      };
+
+      main_timeline.push(question1, feedback1, question2, feedback2);
+    });
+
+    jsPsych.run(main_timeline);
+  </script>
+</html>
