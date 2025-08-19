@@ -1,62 +1,66 @@
-let finalSummary = null;
-let finalTheta   = null;
+// /js/api.js
+(function () {
+  const API_BASE = (typeof window.API_BASE === "string") ? window.API_BASE : "";
 
-async function saveAllData() {
-  const res = await     fetch("/api/save", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(jsPsych.data.get().values())
-    })
-    .then(response => {
-      if (!response.ok) throw new Error("Fehler beim Speichern");
-      return response.text();
-    })
-    .then(msg => {
-      console.log(" Erfolgreich gespeichert:", msg);
-    })
-    .catch(error => {
-      console.error(" Fehler beim Speichern:", error);
+  async function getJson(path, opts) {
+    const res = await fetch(API_BASE + path, opts);
+    if (!res.ok) throw new Error(`${path} -> HTTP ${res.status}`);
+    return res.json();
+  }
+
+  window.loadSubjectSummary = async (subject_id) =>
+    getJson(`/api/subject-summary?id=${encodeURIComponent(subject_id)}`);
+
+  window.loadTheta = async (subject_id) =>
+    getJson(`/api/theta?id=${encodeURIComponent(subject_id)}`);
+
+  window.loadCompletedItems = async (subject_id) =>
+    getJson(`/api/completed-items?id=${encodeURIComponent(subject_id)}`);
+
+  window.loadItemParamsForSelection = async () => {
+    const data = await getJson(`/api/items/params`);
+    if (!Array.isArray(data)) throw new Error('items/params ist kein Array');
+    return data;
+  };
+
+  window.loadItemsByIds = async (ids) =>
+    getJson(`/api/items/by-ids`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ids: Array.isArray(ids) ? ids : [] })
     });
-}
 
-async function loadSubjectSummary(subject_id) {
-  try {
-    const res = await fetch(`/api/subject-summary?id=${encodeURIComponent(subject_id)}`);
-    if (!res.ok) return null;        // 404 -> null
-    return await res.json();         // row oder null
-  } catch { return null; }
-}
+  // ★ Hierher verschoben + API_BASE genutzt
+  window.saveAllData = async function saveAllData(subject_id) {
+    const rows = jsPsych.data.get().values().map(row => ({
+      subject_id: subject_id ?? row.subject_id ?? null,
+      trial_index: row.trial_index ?? null,
+      type: row.type ?? null,
+      question_type: row.question_type ?? null,
+      item: row.item ?? null,
+      stimulus: typeof row.stimulus === 'string' ? row.stimulus : JSON.stringify(row.stimulus ?? null),
+      response: (row.response !== undefined ? JSON.stringify(row.response) : null),
+      normalized_answer: row.normalized_answer ?? null,
+      correct: !!row.correct,
+      rt_fast: !!row.rt_fast,
+      rt: row.rt ?? null,
+      score: row.score ?? null,
+      points_awarded: row.points_awarded ?? null,
+      llm_rationale: row.llm_rationale ?? null
+    }));
 
-async function loadTheta(subject_id) {
-  try {
-    const res = await fetch(`/api/theta?id=${encodeURIComponent(subject_id)}`);
-    if (!res.ok) return null;        // 404 -> null
-    return await res.json();         // {theta,se} oder null
-  } catch { return null; }
-}
+    if (rows.length === 0) return "Keine Daten";
 
-async function loadCompletedItems(subject_id) {
-  try {
-    const response = await fetch(`/api/completed-items?id=${encodeURIComponent(subject_id)}`);
-    if (!response.ok) return [];
-    return await response.json(); // liefert z. B. [1, 3, 5]
-  } catch {
-    return [];
-  }
-}
+    const res = await fetch(API_BASE + '/api/save', {  // ★ API_BASE hier
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rows)
+    });
 
-async function loadItemParams() {
-  try {
-    const res = await fetch("/api/item-params");
-    if (!res.ok) return {};
-    const rows = await res.json(); // [{item, threshold_1, ...}, ...]
-    // Map: item -> params
-    const map = {};
-    for (const r of rows) map[r.item] = r;
-    return map;
-  } catch {
-    return {};
-  }
-}
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Speichern fehlgeschlagen: ${res.status} ${t}`);
+    }
+    return res.text();
+  };
+})();

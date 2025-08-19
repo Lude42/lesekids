@@ -522,3 +522,30 @@
 #jspsych-data-display {
   text-align: left;
 }
+
+/* Buttons untereinander statt nebeneinander */
+.jspsych-btn-group-flex,
+.jspsych-btn-group-grid {
+  display: block !important;
+  text-align: center;
+}
+
+.jspsych-btn {
+  display: block !important;
+  margin: 0.5em auto; /* Abstand zwischen Buttons, zentriert */
+}
+
+/* Spezialklasse für rote Buttons */
+.jspsych-btn.red-btn {
+  background: var(--magenta) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 12px 22px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 0 #a5183a !important;
+}
+.jspsych-btn.red-btn:hover {
+  background: var(--blue) !important;
+  box-shadow: 0 6px 0 #0f5790 !important;
+}

@@ -1,0 +1,6 @@
+<style>
+  .fuel-grid-wrap{background:#0b1220;padding:12px;border-radius:12px;margin:0 auto !important;}
+  .fuel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:180px;  margin:0 auto !important;}
+  .pill{background:#1f2937;border-radius:6px;height:16px;overflow:hidden;position:relative}
+  .pill-fill{position:absolute;inset:0 100% 0 0;background:linear-gradient(90deg,#7dd3fc,#a78bfa,#34d399);transition:width .35s ease;border-radius:6px;width:0%}
+</style>

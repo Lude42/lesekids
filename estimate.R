@@ -1,5 +1,5 @@
 # estimate_pcm.R
-setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_2.0")
+setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_projekt/lesekids")
 library(DBI)
 library(RSQLite)  # oder RPostgres, je nach DB
 library(TAM)
@@ -8,7 +8,7 @@ library(TAM)
 con <- dbConnect(SQLite(), "data/test.db")  # Pfad zur DB
 
 # 2. Daten laden
-data <- dbGetQuery(con, "SELECT subject_id, item, DATE(timestamp) AS date, score FROM resp_filtered1")
+data <- dbGetQuery(con, "SELECT subject_id, item, DATE(timestamp) AS date, score FROM clean_responses")
 
 # 3. Breite Datenstruktur erzeugen
 library(tidyr)
@@ -33,8 +33,7 @@ mod <- TAM::tam.mml(as.matrix(wide_data), verbose= F)
 
 # 5. item flags 
 fit1  <- IRT.itemfit(mod)
-fit1$RMSD %>% filter(Group1 > 0.12)
-fit1$RMSD %>% pull(Group1) %>% hist
+
 
 itemFit <- fit1$RMSD %>% 
   mutate(RMSD = Group1) %>% 
@@ -44,21 +43,23 @@ itemFit <- fit1$RMSD %>%
 params <- mod$item %>% merge(.,itemFit, by = "item") %>%  
   mutate(item = as.integer(item),
          N = as.integer(N),
-         threshold_1 = AXsi_.Cat1,
-         threshold_2 = AXsi_.Cat1-2,
-         weight = ifelse(N > 100 & RMSD > 0.08,0,1 )
-         ) %>% 
-  select(item, N, M, threshold_1, threshold_2, RMSD, weight )
-
-params$estDate <- format(as.POSIXct(Sys.time(), tz = "UTC"),
+         threshold_2 = ifelse(AXsi_.Cat1 < -5,-5, 
+                              ifelse(AXsi_.Cat1 > 2,2,
+                                     AXsi_.Cat1
+                                     )),
+         threshold_1 = threshold_2-2 + rnorm(length(threshold_2),mean = 0, 0.5 ),
+         weight = ifelse(N > 150 & RMSD > 0.08,0,1 ),
+         points_first_try = as.integer(round((threshold_2 + 7)*10)),
+         points_later_try = as.integer(round((threshold_1 + 7)*10)),
+         first_threshold = as.integer(2000), 
+         estDate = format(as.POSIXct(Sys.time(), tz = "UTC"),
                          "%Y-%m-%dT%H:%M:%OS3Z")
-
-params$points_first_try <- as.integer(round((params$threshold_2 + 10)*10))
-params$points_later_try <- as.integer(round((params$threshold_1 + 10)*10))
-
-params$first_threshold <- as.integer(2000)
-
-
+         ) %>% 
+  select(item, N, M, threshold_1, threshold_2, RMSD, 
+         weight, estDate, 
+         points_first_try, points_later_try, 
+         first_threshold )
+summary(params)
 # 6. Tabelle löschen und neu schreiben
 dbExecute(con, "DROP TABLE IF EXISTS item_parameters")
 dbWriteTable(con, "item_parameters", params)
