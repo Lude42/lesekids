@@ -19,13 +19,14 @@ export async function seedRawResponsesOnce(db, seedPath) {
       db.run("BEGIN TRANSACTION");
       const stmt = db.prepare(`
         INSERT INTO raw_responses (
-          subject_id, trial_index, type, question_type, item, stimulus,
+          subject_id, class_id, trial_index, type, question_type, item, stimulus,
           response, normalized_answer, correct, rt_fast, rt, score,
           points_awarded, timestamp, llm_rationale
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
       for (const r of rows) {
         stmt.run([
           r.subject_id ?? null,
+		  r.class_id ?? null,
           r.trial_index ?? null,
           r.type ?? null,
           r.question_type ?? null,

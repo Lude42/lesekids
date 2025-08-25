@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { router as scoreOpenRouter } from "./server/routes/ai-open-scoring.js"; // your existing router
-import itemAdminRouter  from "./server/routes/item-admin.js";
+import demographicsRouter from "./server/routes/demographics-router.js";
 
 // Local modules
 import { initSchema } from "./server/db/schema.js";
@@ -59,7 +59,7 @@ app.use(manualeRouter(db));       // /api/manuale/*
 app.use(saveRouter(db));          // /api/save (triggers R estimation service)
 app.use(scoreOpenRouter);         // keep your existing router mounted
 app.use("/api/items", itemsRouter(db));
-app.use(itemAdminRouter(db));
+app.use("/api/demographics", demographicsRouter(db));
 // 404
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 // Error handler
@@ -68,4 +68,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal server error" });
 });
 
-app.listen(PORT, () => console.log(`Server läuft auf http://localhost:${PORT}+ "/api/item-admin");`));
+app.listen(PORT, () => console.log(`Server läuft auf http://localhost:${PORT}`));

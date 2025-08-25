@@ -7,6 +7,7 @@ export function initSchema(db) {
       CREATE TABLE IF NOT EXISTS raw_responses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         subject_id INTEGER,
+		class_id INTEGER,
         trial_index INTEGER,
         type INTEGER,
         question_type TEXT,
@@ -32,6 +33,23 @@ export function initSchema(db) {
         ts TEXT DEFAULT (datetime('now')),
         PRIMARY KEY (scorer, item, normalized_answer)
       )`);
+	  
+	      db.run(`
+      CREATE TABLE IF NOT EXISTS demographics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_id INTEGER NOT NULL UNIQUE,
+  gen INTEGER,
+  mon INTEGER,
+  jhr INTEGER,
+  lng INTEGER,
+  msr INTEGER,
+  bok INTEGER,
+  po1 INTEGER, -- 0/1
+  po2 INTEGER, -- 0/1
+  po3 INTEGER, -- 0/1
+  po4 INTEGER, -- 0/1
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);`);
 
     // Views (drop first to keep deterministic)
     db.run(`DROP VIEW IF EXISTS clean_responses`);
@@ -55,6 +73,20 @@ export function initSchema(db) {
        AND r.item      = firsts.item
        AND r.timestamp = firsts.timestamp
       WHERE correct = 1 AND rt_fast = 0;`);
+	  
+	      db.run(`
+      CREATE VIEW IF NOT EXISTS clean_resp_first AS
+      SELECT r.subject_id, r.item, r.rt, r.correct, r.response, r.question_type, r.timestamp
+      FROM raw_responses r
+      JOIN (
+        SELECT subject_id, item, MIN(timestamp) AS timestamp
+        FROM raw_responses
+        GROUP BY subject_id, item
+      ) firsts
+        ON r.subject_id = firsts.subject_id
+       AND r.item      = firsts.item
+       AND r.timestamp = firsts.timestamp
+      WHERE stimulus = -41 AND rt_fast = 0;`);
 
     db.run(`
       CREATE VIEW IF NOT EXISTS ai_scores AS
@@ -199,7 +231,7 @@ export function initSchema(db) {
 	  
 	  // Nach deiner bisherigen DB-Initialisierung ergänzen:
 db.exec(`
-CREATE TABLE IF NOT EXISTS items_contents (
+CREATE TABLE IF NOT EXISTS item_contents (
   item               INTEGER PRIMARY KEY,
   type               TEXT CHECK(type IN ('mc','open')) DEFAULT 'mc',
   que                TEXT,            -- HTML ok

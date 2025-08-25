@@ -15,23 +15,59 @@ export default function subjectsRouter(db) {
   });
 
   // /api/theta?id=123
-  router.get("/api/theta", (req, res) => {
-    const subjectId = req.query.id;
-    if (!subjectId) return res.status(400).send("Missing subject_id");
-    const sql = `
-      SELECT r.subject_id, r.item,
-             CASE WHEN r.score=2 THEN 1 WHEN r.score=1 THEN 0 ELSE 0 END AS score,
-             p.threshold_1 AS threshold
-      FROM clean_responses r
-      JOIN item_parameters p ON r.item = p.item
-      WHERE r.subject_id = ?`;
-    db.all(sql, [subjectId], (err, rows) => {
-      if (err) return res.status(500).send("Fehler bei Theta-Schätzung");
-      if (!rows || rows.length === 0) return res.json(null);
+// Beispiel in server/routes/theta-router.js o.ä.
+// Annahmen: estimateThetaRasch(rows) ist verfügbar, db ist sqlite3-DB-Handle
+
+router.get("/api/theta", (req, res) => {
+  const subjectId = req.query.id;
+  if (!subjectId) return res.status(400).json({ error: "Missing subject_id" });
+
+  const sqlResponses = `
+    SELECT 
+      r.subject_id,
+      r.item,
+      CASE WHEN r.score = 2 THEN 1 WHEN r.score = 1 THEN 0 ELSE 0 END AS score,
+      p.threshold_1 AS threshold
+    FROM clean_responses r
+    JOIN item_parameters p ON r.item = p.item
+    WHERE r.subject_id = ?
+  `;
+
+  db.all(sqlResponses, [subjectId], (err, rows) => {
+    if (err) {
+      console.error("[/api/theta] DB-Fehler (responses):", err.message);
+      return res.status(500).json({ error: "Fehler bei Theta-Schätzung (responses)" });
+    }
+
+    // Fallback: wenn keine Antworten -> prior aus View holen
+    if (!rows || rows.length === 0) {
+      const sqlPrior = `SELECT theta FROM demo_prior_theta WHERE subject_id = ? LIMIT 1`;
+      db.get(sqlPrior, [subjectId], (err2, row) => {
+        if (err2) {
+          console.error("[/api/theta] DB-Fehler (prior view):", err2.message);
+          return res.status(500).json({ error: "Fehler beim Laden von Prior-Theta" });
+        }
+        if (!row || row.theta === null || row.theta === undefined) {
+          // kein Match im View -> gib null zurück
+          return res.json({ subject_id: subjectId, theta: null, se: null, source: "prior" });
+        }
+        const thetaNum = typeof row.theta === "number" ? row.theta : Number(row.theta);
+        return res.json({ subject_id: subjectId, theta: thetaNum, se: null, source: "prior" });
+      });
+      return; // wichtig: hier nicht weiterlaufen
+    }
+
+    // Antworten vorhanden -> schätze Theta aus Antworten
+    try {
       const { theta, se } = estimateThetaRasch(rows);
-      res.json({ subject_id: subjectId, theta, se });
-    });
+      return res.json({ subject_id: subjectId, theta, se, source: "responses" });
+    } catch (e) {
+      console.error("[/api/theta] Schätz-Fehler:", e);
+      return res.status(500).json({ error: "Fehler bei Theta-Schätzung (Algorithmus)" });
+    }
   });
+});
+
 
   // /api/completed-items?id=123
   router.get("/api/completed-items", (req, res) => {

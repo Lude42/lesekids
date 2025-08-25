@@ -1,29 +1,53 @@
+/* Tooltip Trigger */
+.tooltip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--lk-muted); /* dezente Linie in Missions-Farbe */
+  color: var(--lk-text);
+}
 
-	.tooltip {
-      position: relative;
-      cursor: pointer;
-      border-bottom: 1px dotted rgba(0, 0, 0, 0.4); /* dezente Unterstreichung */
-    }
+/* Tooltip Box */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: max-content;
+  max-width: 260px;
+  background: linear-gradient(180deg, #0e182c, #0a1426);
+  color: var(--lk-text);
+  text-align: left;
+  border: 1px solid var(--lk-line);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  position: absolute;
+  z-index: 10;
+  top: 115%;       /* etwas unterhalb des Texts */
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  font: 500 0.8rem/1.3 system-ui, -apple-system, Segoe UI, Roboto;
+  pointer-events: none;
 
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 220px;
-      background-color: #333;
-      color: #fff;
-      text-align: left;
-      border-radius: 5px;
-      padding: 10px;
-      position: absolute;
-      z-index: 1;
-      top: 100%;
-      left: 0;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
+  /* leichter Glow wie im Panel */
+  text-shadow: 0 0 6px color-mix(in oklab, var(--lk-glow) 30%, transparent);
+  transform: translateY(-4px);
+}
 
-    .tooltip:hover .tooltiptext,
-    .tooltip:focus-within .tooltiptext {
-      visibility: visible;
-      opacity: 1;
-    } 
-	
+/* Tooltip sichtbar beim Hover / Focus */
+.tooltip:hover .tooltiptext,
+.tooltip:focus-within .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* kleine Pfeilspitze */
+.tooltip .tooltiptext::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent var(--lk-line) transparent;
+}
