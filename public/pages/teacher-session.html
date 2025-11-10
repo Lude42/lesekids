@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Klassenübersicht · LESEKI:DS </title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    table {
+  border-collapse: collapse;
+  width: auto;              /* passt sich automatisch an den Inhalt an */
+  max-width: 100%;          /* nie breiter als der Container */
+  table-layout: auto;       /* Browser berechnet Spaltenbreite am Inhalt */
+}
+
+    th, td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  white-space: nowrap;      /* verhindert Umbrüche -> Spalten bleiben kompakt */
+}
+
+    th {
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.status-0 { background:#f0f0f0; }   /* noch nicht gestartet */
+.status-1 { background:#e6f0ff; }   /* gestartet (hellblau) */
+.status-2 { background:#e6ffe6; }   /* beendet (hellgrün) */
+    .muted { color: #777; }
+  </style>
+</head>
+<body>
+  <h1>Klassenübersicht</h1>
+
+  <div id="hint" class="notice" style="display:none;"></div>
+
+  <div class="meta">
+    Klasse: <strong id="classId">–</strong>
+    <span class="muted">Letzte Aktualisierung:</span> <span id="updated" class="muted">–</span>
+    <button id="refreshBtn" title="Oder Taste R">Aktualisieren</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px;">Datum</th>
+        <th>Schüler-ID</th>
+        <th>Aufgaben gelöst</th>
+        <th>Abgeschlossen</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="4" class="muted">Bereit. Klicke auf „Aktualisieren“.</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    // URL-Parameter lesen
+    const params     = new URLSearchParams(location.search);
+    const classParam = params.get("class");
+    const tbody      = document.getElementById("tbody");
+    const updatedEl  = document.getElementById("updated");
+    const classEl    = document.getElementById("classId");
+    const btn        = document.getElementById("refreshBtn");
+    const hintEl     = document.getElementById("hint");
+
+    classEl.textContent = classParam ?? "–";
+
+    // Hinweis anzeigen, falls ?class fehlt
+    if (!classParam) {
+      hintEl.style.display = "block";
+      hintEl.textContent = "Bitte rufe die Seite mit einem Klassen-Parameter auf, z. B. ?class=000";
+    }
+
+    async function load() {
+      if (!classParam) {
+        tbody.innerHTML = '<tr><td colspan="4" class="muted">Kein Klassen-Parameter (?class=…) übergeben.</td></tr>';
+        return;
+      }
+      try {
+        btn.disabled = true;
+        btn.textContent = "Lade…";
+
+        const res = await fetch(`/api/teacher/session?class=${encodeURIComponent(classParam)}`, {
+          cache: "no-store",
+          headers: { "Accept": "application/json" }
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Serverfehler ${res.status}${text ? ": " + text : ""}`);
+        }
+
+        const data = await res.json();
+        const rows = Array.isArray(data) ? data : (data.rows || []);
+
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="muted">Keine Daten</td></tr>';
+        } else {
+if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="muted">Keine Daten</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(r => {
+      // Unterstütze beide Backends:
+      const date   = r.date ?? r.day ?? "";
+      const sid    = r.subject_id ?? r.schueler_id ?? "";
+      const count  = (r.num_tasks_completed ?? r.num_item_comp ?? r.aufgaben_geloest ?? 0);
+
+      // Status bevorzugt aus `status`; Fallback aus `finished`/`is_today`
+      let status = r.status;
+      if (status === undefined || status === null) {
+        const finished = Number(r.finished) === 1;
+        const isToday  = Number(r.is_today) === 1;
+        status = finished ? 2 : (isToday ? 1 : 0);
+      }
+
+      return `
+        <tr>
+          <td>${date}</td>
+          <td>${sid}</td>
+          <td>${count}</td>
+          <td class="status-${status}">${status}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+        }
+
+        updatedEl.textContent = new Date().toLocaleTimeString();
+      } catch (e) {
+        console.error(e);
+        tbody.innerHTML = `<tr><td colspan="4" class="muted">Fehler beim Laden: ${e.message}</td></tr>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Aktualisieren";
+      }
+    }
+
+    // Button klick → laden
+    btn.addEventListener("click", load);
+
+    // Optional: Taste "r" oder "R" triggert Aktualisierung
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key && ev.key.toLowerCase() === "r") load();
+    });
+
+    // Wenn du beim Öffnen direkt Daten sehen willst, entferne den Kommentar:
+    // load();
+  </script>
+</body>
+</html>

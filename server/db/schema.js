@@ -51,6 +51,32 @@ export function initSchema(db) {
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );`);
 
+
+    db.run(`
+-- Einmalige Migration
+CREATE TABLE IF NOT EXISTS motivation_daily (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_id TEXT NOT NULL,
+  day TEXT NOT NULL,                 -- Format YYYY-MM-DD (lokale Zeit)
+  -- Likert 1..5 bzw. 1..4
+  mov11 INTEGER, mov12 INTEGER, mov13 INTEGER, mov14 INTEGER,
+  mov15 INTEGER, mov16 INTEGER, mov17 INTEGER, mov18 INTEGER,
+  mov21 INTEGER, mov22 INTEGER, mov23 INTEGER, mov24 INTEGER,
+  mov25 INTEGER, mov26 INTEGER, mov27 INTEGER, mov28 INTEGER,
+  lsk1  INTEGER, lsk2  INTEGER, lsk3  INTEGER, lsk4  INTEGER,
+  lsk5  INTEGER, lsk6  INTEGER, lsk7  INTEGER, lsk8  INTEGER,
+  lbvh1 INTEGER, lbvh2 INTEGER, lbvh3 INTEGER, lbvh4 INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  UNIQUE(subject_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS idx_motivation_daily_subject_day
+ON motivation_daily(subject_id, day);
+);
+
+CREATE INDEX IF NOT EXISTS idx_motivation_subject ON motivation(subject_id);
+);`);
+
     // Views (drop first to keep deterministic)
     db.run(`DROP VIEW IF EXISTS clean_responses`);
     db.run(`DROP VIEW IF EXISTS ai_scores`);
@@ -62,17 +88,13 @@ export function initSchema(db) {
 
     db.run(`
       CREATE VIEW IF NOT EXISTS clean_responses AS
-      SELECT r.subject_id, r.item, r.score, r.timestamp
-      FROM raw_responses r
-      JOIN (
-        SELECT subject_id, item, MIN(timestamp) AS timestamp
-        FROM raw_responses
-        GROUP BY subject_id, item
-      ) firsts
-        ON r.subject_id = firsts.subject_id
-       AND r.item      = firsts.item
-       AND r.timestamp = firsts.timestamp
-      WHERE correct = 1 AND rt_fast = 0;`);
+      SELECT subject_id,
+           item,
+           DATE(timestamp) as day,
+           MAX(score) AS score
+    FROM raw_responses
+	WHERE item IS NOT NULL
+    GROUP BY subject_id, item, DATE(timestamp);`);
 	  
 	      db.run(`
       CREATE VIEW IF NOT EXISTS clean_resp_first AS
@@ -109,10 +131,60 @@ export function initSchema(db) {
         SUM(points_awarded) AS total_points,
         COUNT(DISTINCT DATE(timestamp)) AS days_with_entries,
         MAX(DATE(timestamp)) AS last_entry_date,
-        COUNT(*) AS num_tasks_completed
+        COUNT(DISTINCT item) AS num_tasks_completed
       FROM raw_responses
-      WHERE correct = 1 AND rt_fast = 0
       GROUP BY subject_id;`);
+	  
+db.run(`
+CREATE VIEW IF NOT EXISTS live_session_summary AS
+WITH today_raw AS (
+  SELECT *
+  FROM raw_responses
+  WHERE DATE(timestamp, 'localtime') = DATE('now', 'localtime')
+),
+today_agg AS (
+  SELECT
+    subject_id,
+    class_id,
+    -- heutige bearbeitete Items (ohne "end/ende")
+    COUNT(DISTINCT CASE
+      WHEN item IS NOT NULL
+       AND (question_type IS NULL OR lower(question_type) NOT IN ('end','ende'))
+      THEN item
+    END) AS num_tasks_completed,
+    -- heute gestartet?
+    MAX(CASE WHEN lower(question_type) = 'start' THEN 1 ELSE 0 END) AS has_start,
+    -- heute beendet? (robust: end/ende)
+    MAX(CASE WHEN lower(question_type) IN ('end','ende') THEN 1 ELSE 0 END) AS has_end
+  FROM today_raw
+  GROUP BY subject_id, class_id
+)
+SELECT
+  sc.subject_id,
+  sc.class_id,
+  DATE('now','localtime') AS day,
+  COALESCE(ta.num_tasks_completed, 0) AS num_tasks_completed,
+  CASE
+    WHEN COALESCE(ta.has_end,   0) = 1 THEN 2  -- beendet
+    WHEN COALESCE(ta.has_start, 0) = 1 THEN 1  -- gestartet
+    ELSE 0                                     -- in Klasse, heute kein Eintrag
+  END AS status
+FROM subject_class sc
+LEFT JOIN today_agg ta
+  ON ta.subject_id = sc.subject_id
+ AND ta.class_id   = sc.class_id
+;
+`);
+
+
+db.run(`
+CREATE VIEW IF NOT EXISTS subject_class AS
+SELECT DISTINCT
+    subject_id,
+    class_id
+FROM raw_responses;
+
+`);
 
     db.run(`
       CREATE VIEW IF NOT EXISTS consensus AS

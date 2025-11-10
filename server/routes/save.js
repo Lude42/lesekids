@@ -12,12 +12,13 @@ export default function saveRouter(db) {
       db.run("BEGIN TRANSACTION");
       const stmt = db.prepare(`
         INSERT INTO raw_responses (
-          subject_id, trial_index, type, question_type, item, stimulus, response,
+          subject_id, class_id, trial_index, type, question_type, item, stimulus, response,
           normalized_answer, correct, rt_fast, rt, score, points_awarded, timestamp, llm_rationale
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
       for (const row of data) {
         stmt.run([
           row.subject_id ?? null,
+		  row.class_id ?? null,
           row.trial_index ?? null,
           row.type ?? null,
           row.question_type ?? null,
@@ -32,7 +33,7 @@ export default function saveRouter(db) {
           row.points_awarded ?? null,
           new Date().toISOString(),
           row.llm_rationale ?? null,
-        ]);
+		  ]);
       }
       stmt.finalize(err => {
         if (err) { db.run("ROLLBACK"); return res.status(500).send("Fehler beim Speichern"); }

@@ -1,4 +1,4 @@
-function mapDemoResponses(r1, r2, r3) {
+function mapDemoResponses(r1, r2, r3, r4) {
   const mapGen = { "Mädchen": 1, "Junge": 2, "Anderes": 3 };
   const mapMon = {
     "Januar": 1, "Februar": 2, "März": 3, "April": 4, "Mai": 5, "Juni": 6,
@@ -34,29 +34,96 @@ function mapDemoResponses(r1, r2, r3) {
     lng: mapLng[r2.lng] ?? null,
     msr: mapMsr[r2.msr] ?? null,
     bok: mapBok[r3.bok] ?? null,
-    po1: r3.po1 === "ja" ? 2 : r3.po1 === "nein" ? 1 : null,
-    po2: r3.po2 === "ja" ? 2 : r3.po2 === "nein" ? 1 : null,
-    po3: r3.po3 === "ja" ? 2 : r3.po3 === "nein" ? 1 : null,
-    po4: r3.po4 === "ja" ? 2 : r3.po4 === "nein" ? 1 : null,
+    po1: r4.po1 === "ja" ? 2 : r4.po1 === "nein" ? 1 : null,
+    po2: r4.po2 === "ja" ? 2 : r4.po2 === "nein" ? 1 : null,
+    po3: r4.po3 === "ja" ? 2 : r4.po3 === "nein" ? 1 : null,
+    po4: r4.po4 === "ja" ? 2 : r4.po4 === "nein" ? 1 : null,
   };
 }
 
 
 // ---------- Deine drei Demoblöcke ----------
+
+function createOnboardStimulus(title, text, imgPath) {
+  return `
+    <div class="container">
+      <div class="text">
+        <h3>${title}</h3>
+        <p>${text}</p>
+      </div>
+      <div class="image">
+        <img src="${imgPath}" alt="Onboarding Bild">
+      </div>
+    </div>
+  `;
+}
+
+// ✅ Trials definieren
+const onboard1 = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: createOnboardStimulus(
+    "Willkommen zur LeseKI:DS Weltraum Mission",
+    "Wir starten jetzt deine Mission.",
+    "img/lesekids_logo.png"
+  ),
+  choices: ["Weiter 🚀"],
+};
+
+const onboard2 = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: createOnboardStimulus(
+    "Suche nach einer Lesebasis",
+    "Wir sind auf der Suche nach der geheimnisvollen Lesebasis. Dort bekommt man Einblick in das Leben der Menschen, was sie Denken und warum sie Dinge machen.",
+    "img/onboard1.png"
+  ),
+  choices: ["Weiter 🚀"],
+};
+
+
+const onboard3 = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: createOnboardStimulus(
+    "Wir brauchen Plasmatreibstoff",
+    "Du sammelst Plasmatreibstoff, indem du Leserätsel löst. Je schwieriger das Rätsel desto mehr Plasmatreibstoff bringen sie.",
+    "img/onboard2.png"
+  ),
+  choices: ["Weiter 🚀"],
+};
+
+const onboard4 = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: createOnboardStimulus(
+    "Dein Boardcomputer hilft",
+    "Wenn du nicht weiter weißt bekommst du Tipps: Was wichtig ist, Was Wörter bedeuten und Woran man denken muss.",
+    "img/onboard3.png"
+  ),
+  choices: ["Weiter 🚀"],
+};
+
+const onboard5 = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: createOnboardStimulus(
+    "Bevor es losgehen kann",
+    "Der Boardcomputer will einpaar Dinge über dich wissen, damit er dir gut helfen kann. Danach wird Plasmatreibstoff gesammelt!",
+    "img/onboard4.png"
+  ),
+  choices: ["Weiter 🚀"],
+};
+
 const demo1 = {
   type: jsPsychSurveyMultiChoice,
   button_label: "Weiter >",
   preamble: "<h3>Über dich</h3>",
   questions: [
     {
-      prompt: "Welche dieser Beschreibungen trifft auf dich zu?",
+      prompt: "<p align='left'>Welche dieser Beschreibungen trifft auf dich zu?",
       options: ["Mädchen", "Junge", "Anderes"],
       horizontal: true,
       required: true,
       name: "gen",
     },
     {
-      prompt: "In welchem Monat bist du geboren?",
+      prompt: "<p align='left'>In welchem Monat bist du geboren?",
       options: [
         "Januar","Februar","März","April","Mai","Juni","Juli",
         "August","September","Oktober","November","Dezember"
@@ -66,7 +133,7 @@ const demo1 = {
       name: "mon",
     },
     {
-      prompt: "In welchem Jahr bist du geboren?",
+      prompt: "<p align='left'>In welchem Jahr bist du geboren?",
       options: ["vor 2011","2011","2012","2013","2014","2015","2016","2017","2018", "2019","nach 2019"],
       horizontal: true,
       required: true,
@@ -74,6 +141,7 @@ const demo1 = {
     },
   ],
   randomize_question_order: false,
+  data: { type: 0, question_type: "demo", stimulus: -79 }
 };
 
 const demo2 = {
@@ -82,7 +150,7 @@ const demo2 = {
   preamble: "<h3>Über dich</h3>",
   questions: [
     {
-      prompt: "Wie oft sprichst du zu Hause Deutsch?",
+      prompt: "<p align='left'>Wie oft sprichst du zu Hause Deutsch?",
       options: [
         "Ich spreche zu Hause <b>immer</b> Deutsch.",
         "Ich spreche zu Hause <b>fast immer</b>  Deutsch.",
@@ -94,7 +162,7 @@ const demo2 = {
       name: "lng",
     },
     {
-      prompt: "Welche der folgenden Aussagen trifft auf dich zu?",
+      prompt: "<p align='left'>Welche der folgenden Aussagen trifft auf dich zu?",
       options: [
         "Deutsch ist meine Muttersprache.",
         "Deutsch ist nicht meine Muttersprache, aber ich habe Deutsch gelernt, bevor ich in die Schule gekommen bin.",
@@ -105,7 +173,9 @@ const demo2 = {
       name: "msr",
     },
   ],
+
   randomize_question_order: false,
+  data: { type: 0, question_type: "demo", stimulus: -79 }
 };
 
 const demo3 = {
@@ -115,7 +185,7 @@ const demo3 = {
   questions: [
     {
       prompt:
-        "Wie viele Bücher gibt es bei dir zu Hause ungefähr? <br> (Zähle nicht mit: Zeitschriften, Zeitungen und deine Schulbücher)",
+        "<p align='left'>Wie viele Bücher gibt es bei dir zu Hause ungefähr? <br> (Zähle nicht mit: Zeitschriften, Zeitungen und deine Schulbücher)",
       options: [
         "Keine oder nur sehr wenige (0-10)<img src='img/book10.png' alt='10 buecher' width='1000'>",
         "Genug, um ein regalbrett zu füllen (11-25)<img src='img/book25.png' alt='25 buecher' width='1000'>",
@@ -127,42 +197,45 @@ const demo3 = {
       required: true,
       name: "bok",
     },
+  ],
+  randomize_question_order: false,
+	data: { type: 0, question_type: "demo", stimulus: -79 }
+};
+
+const demo4 = {
+  type: jsPsychSurveyMultiChoice,
+  button_label: "Weiter >",
+  preamble: "<h3>Was gibt es bei dir zu Hause?</h3>",
+  questions: [
     {
-      prompt: "Hast du einen <b>Schreibtisch</b> oder einen anderen Tisch nur für dich zu Hause?",
+      prompt: "<p align='left'>Hast du einen <b>Schreibtisch</b> oder einen anderen Tisch nur für dich zu Hause?",
       options: ["ja", "nein"],
       horizontal: true,
       required: true,
       name: "po1",
     },
     {
-      prompt: "Hast du ein <b>eigenes Zimmer</b> zu Hause?",
+      prompt: "<p align='left'>Hast du ein <b>eigenes Zimmer</b> zu Hause?",
       options: ["ja", "nein"],
       horizontal: true,
       required: true,
       name: "po2",
     },
     {
-      prompt: "Gibt es einen <b>Rasenmäher</b> bei dir zu Hause?",
+      prompt: "<p align='left'>Gibt es einen <b>Rasenmäher</b> bei dir zu Hause?",
       options: ["ja", "nein"],
       horizontal: true,
       required: true,
       name: "po3",
     },
     {
-      prompt: "Gibt es <b>zwei oder mehr Autos</b> bei dir zu Hause?",
+      prompt: "<p align='left'>Gibt es <b>zwei oder mehr Autos</b> bei dir zu Hause?",
       options: ["ja", "nein"],
       horizontal: true,
       required: true,
       name: "po4",
-    },
+    }
   ],
-  randomize_question_order: false,
-};
+  randomize_question_order: false,data: { type: 0, question_type: "demo", stimulus: -79 }
 
-const instructions3 = {
-  type: jsPsychInstructions,
-  pages: ["Super, vielen Dank!"],
-  button_label_next: "Weiter",
-  button_label_previous: "Zurück",
-  show_clickable_nav: true,
 };

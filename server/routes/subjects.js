@@ -74,7 +74,7 @@ router.get("/api/theta", (req, res) => {
     const id = req.query.id;
     if (!id) return res.status(400).send("Missing id");
     db.all(
-      `SELECT DISTINCT item FROM raw_responses WHERE subject_id = ? AND correct = 1 AND rt_fast = 0`,
+      `SELECT DISTINCT item FROM raw_responses WHERE subject_id = ? AND rt_fast = 0`,
       [id],
       (err, rows) => {
         if (err) return res.status(500).send("Database error");
@@ -85,3 +85,5 @@ router.get("/api/theta", (req, res) => {
 
   return router;
 }
+
+

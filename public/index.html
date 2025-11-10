@@ -20,6 +20,7 @@
     <script src="/jspsych/dist/plugin-instructions.js"></script>
     <script src="/jspsych/dist/plugin-survey-multi-choice.js"></script>
     <script src="/jspsych/dist/plugin-call-function.js"></script>
+    <script src="/jspsych/dist/plugin-survey-likert.js"></script>
 
     <!-- App-Utils (müssen vor start() geladen sein) -->
     <script src="/js/utils.js"></script>
@@ -34,6 +35,7 @@
     <script src="/js/demo-questions.js"></script>
     <script src="/js/question-maker.js"></script>
     <script src="/js/feedback-maker.js"></script>
+    <script src="/js/att-questions.js"></script>
     <!-- Test-Item Button Layout Fixes -->
     <style>
       .test-item .jspsych-btn-group-flex,
@@ -49,6 +51,28 @@
         margin: 0.75em 0;
         padding: 0.9em 1.4em !important;
       }
+
+      .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.text {
+  flex: 1;
+  padding: 10px;
+  font-size: 18px;
+}
+.image {
+  flex: 1;
+  text-align: right;
+}
+.image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
     </style>
   </head>
 
@@ -74,6 +98,7 @@
             .catch((e) => console.error("Fehler beim Speichern:", e));
           }
       });
+
 
       /* ============================================================
        * 1) Helper: Demografie – Serverstatus & Speichern
@@ -102,7 +127,14 @@
         return { ok: true, alreadySaved: false };
       }
 
+      async function getJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} beim Laden von ${url}`);
+  return res.json();
+}
 
+window.loadTasksToday = async (subject_id) =>
+  getJson(`/api/today-count?id=${encodeURIComponent(subject_id)}`);
       // Sammeln + Speichern nach Demo
       const saveDemBlock = {
         type: jsPsychCallFunction,
@@ -113,12 +145,14 @@
             const d1 = jsPsych.data.get().filter({ trial_type: "survey-multi-choice" }).values()[0] || {};
             const d2 = jsPsych.data.get().filter({ trial_type: "survey-multi-choice" }).values()[1] || {};
             const d3 = jsPsych.data.get().filter({ trial_type: "survey-multi-choice" }).values()[2] || {};
+            const d4 = jsPsych.data.get().filter({ trial_type: "survey-multi-choice" }).values()[3] || {};
 
             const r1 = d1.response || {};
             const r2 = d2.response || {};
             const r3 = d3.response || {};
+            const r4 = d4.response || {};
 
-            const payload = mapDemoResponses(r1, r2, r3);
+            const payload = mapDemoResponses(r1, r2, r3, r4);
             payload.subject_id = subject_id;
             await saveDemographics(payload);
 
@@ -131,6 +165,18 @@
           }
         },
       };
+      async function fetchMotivationDailyStatus(subject_id, day /* optional */) {
+  const url = day
+    ? `/api/motivation-daily/status/${encodeURIComponent(subject_id)}?day=${encodeURIComponent(day)}`
+    : `/api/motivation-daily/status/${encodeURIComponent(subject_id)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Motivation-Status-Check fehlgeschlagen: ${res.status}`);
+  const { completed } = await res.json();
+  return !!completed;
+}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function getMotivationTodayLSKey(subject_id) { return `motivation_daily__${subject_id}__${todayStr()}`; }
+
 
       // Wenn nötig Demografie-Sequenz anhängen
       async function pushDemIfNeeded(timeline) {
@@ -149,10 +195,32 @@
         return timeline;
       }
 
+  async function pushMotivationIfNeeded(timeline) {
+  const lsKey = getMotivationTodayLSKey(subject_id);
+  const lsDone = localStorage.getItem(lsKey) === "1";
+
+  let serverDone = false;
+  try {
+    serverDone = await fetchMotivationDailyStatus(subject_id);
+  } catch (e) {
+    console.warn("Motivation-Status nicht verfügbar, nutze nur localStorage:", e);
+  }
+
+  if (lsDone || serverDone) {
+    console.log("Motivation heute bereits vorhanden – überspringe ATT-Block.");
+    return timeline;
+  }
+
+  // Hier deine vier Blöcke & Save-Block pushen:
+  timeline.push(mov1, mov2, lsk,lbvh, saveMotivationDailyBlock);
+  return timeline;
+}
+
+
       /* ============================================================
        * 3) Konstanten & globale Referenzen
        * ============================================================ */
-      const ITEMS_PER_SESSION = 10;
+      const ITEMS_PER_SESSION = 20;
       window.items = []; // Auswahl der Items der Session
 
       /* ============================================================
@@ -231,8 +299,19 @@
         const params = new URLSearchParams(window.location.search);
         return params.get("id") || jsPsych.randomization.randomInt(100000000, 999999999);
       }
+
+      function getClassIdFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("class") || jsPsych.randomization.randomInt(100000000, 999999999);
+      }
       const subject_id = getSubjectIdFromURL();
-      jsPsych.data.addProperties({ subject_id });
+      const class_id = getClassIdFromURL();
+      console.log(class_id)
+      jsPsych.data.addProperties({ subject_id, 
+        class_id});
+
+        // Gleich am Start, bevor die eigentlichen Aufgaben beginnen
+
 
       /* ============================================================
        * 6) Startlogik (zur ursprünglichen Version)
@@ -265,20 +344,28 @@ async function boot() {
 
   // 2) Demografie-Experiment als eigene, abgeschlossene Timeline
   const demoTimeline = [
+    onboard1,
+    onboard2,
+    onboard3,
+    onboard4,
+    onboard5,
     demo1,
     demo2,
     demo3,
+    demo4,
     saveDemBlock,
-    instructions3,
     {
       // kleiner Abschluss-Screen (optional hübsch machen)
       type: jsPsychHtmlButtonResponse,
       stimulus: `
         <div class="card">
           <h3>Super, danke!</h3>
-          <p>Wir starten jetzt deine Mission.</p>
+          <p>Jetzt kommen noch einpaar Fragen dazu, wie du übers lesen denkst.</p>
+          <p>Antworte einfach frei aus dem Bauch heraus.</p>
         </div>`,
-      choices: ["Weiter 🚀"]
+      choices: ["Weiter 🚀"],
+      on_finish: (d) => (d.stimulus = -2),
+      data: { type: 0, question_type: "demo" }
     },
     {
       // „Handover“: nach dem Klick direkt Haupt‑Experiment starten
@@ -286,7 +373,8 @@ async function boot() {
       func: () => {
         // Kleines Delay, damit der vorherige Trial sauber schließt
         setTimeout(() => startMainExperiment(), 0);
-      }
+      },
+      data: { type: 0, question_type: "demo", stimulus: -79 }
     }
   ];
 
@@ -294,17 +382,25 @@ async function boot() {
 }
 
 
+
       /** ------------------------------------------------
  * Haupt‑Experiment (war vorher in start())
  * ------------------------------------------------ */
 async function startMainExperiment() {
+await fetch("/api/start", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ subject_id: subject_id, class_id: class_id })
+});
+
   try {
     // --- Daten laden ---
-    const [summary, thetaData, completedItems, selectionParams] = await Promise.all([
+    const [summary, thetaData, completedItems, selectionParams, todayCount] = await Promise.all([
       loadSubjectSummary(subject_id),
       loadTheta(subject_id),
       loadCompletedItems(subject_id),
       loadItemParamsForSelection(),
+      loadTasksToday(subject_id), // ⬅️ neu
     ]);
 
         if (window.__LK_START_LOCK__) return;
@@ -344,14 +440,14 @@ async function startMainExperiment() {
         const itemsWithParams = selectionParams; // direkt nutzen
         const completedSet = new Set((completedItems || []).map(x => String(x)));
         const remainingItems = itemsWithParams.filter(it => !completedSet.has(String(it.item)));
-
+console.log("thetaData", theta)
         // Gewichtung
         const weights = remainingItems.map(it =>
           normalPDF(it.threshold_2, theta, 1) * (Number.isFinite(it.weight) ? it.weight : 1)
         );
 
         // Ziehung
-        const pick = Math.min(ITEMS_PER_SESSION, remainingItems.length);
+        const pick = Math.min(ITEMS_PER_SESSION - (todayCount?.num_tasks_completed_today ?? 0), remainingItems.length);
         const selected = weightedSampleWithoutReplacement(remainingItems, weights, pick);
         const selectedIds = selected.map(it => it.item);
 
@@ -371,7 +467,7 @@ async function startMainExperiment() {
 
         // Tageslimit / alle Items fertig?
         const today = new Date().toISOString().slice(0, 10);
-        const alreadyDoneToday = summary && summary.last_entry_date === today;
+        const alreadyDoneToday = (todayCount?.num_tasks_completed_today ?? 0) >= ITEMS_PER_SESSION;
 
         if (alreadyDoneToday) {
           const blockTrial = {
@@ -454,7 +550,7 @@ async function startMainExperiment() {
 window.totalPoints = 0;
 window.tasksCompleted = 0;
 window.scoredItems = [];
-
+timeline = await pushMotivationIfNeeded(timeline);
         /* -------------------------------------------
          * 6c) Timeline aufbauen
          * ------------------------------------------- */
@@ -546,7 +642,8 @@ window.scoredItems = [];
               </div>
             `;
           },
-          choices: ["Fertig"]
+          choices: ["Fertig"],
+          data: { type: 0, question_type: "end"},
         };
 
         main_timeline.push(saveAndFetchTrial, endSummaryTrial);

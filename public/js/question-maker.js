@@ -10,7 +10,7 @@ function makeQuestionTrial(item) {
       return item.que;
     }
 
-    if (!selectedAlt) selectedAlt = Math.random() < 0.5 ? "a" : "b";
+    if (!selectedAlt) selectedAlt = "b"//Math.random() < 0.5 ? "a" : "b";
     const html = selectedAlt === "a" ? item.que2a : item.que2b;
 
     if (selectedAlt === "a") {
@@ -120,7 +120,7 @@ function makeQuestionTrial(item) {
       },
     ],
     button_label: "Abgeben ✍",
-    data: { type: 1, item: item.item, question_type: "open" },
+    data: { type: 1, item: item.item, question_type: "open", response: -9},
     on_load: function () {
       if (repeats > 0 && selectedAlt === "a") {
         renderFeedbackAudio({ item: item.item, mountId: "tts-audio" });

@@ -16,7 +16,7 @@ router.get("/params", (req, res) => {
     SELECT
       CAST(c.item AS TEXT)                           AS item,
       CAST(COALESCE(p.threshold_1, -1)       AS REAL) AS threshold_1,
-      CAST(COALESCE(p.threshold_2, 0)        AS REAL) AS threshold_2,
+      CAST(COALESCE(p.threshold_2pv, 0)        AS REAL) AS threshold_2,
       CAST(COALESCE(p.first_threshold, 2000) AS REAL) AS first_threshold,
       CAST(COALESCE(p.points_first_try, 60)  AS REAL) AS points_first_try,
       CAST(COALESCE(p.points_later_try, 40)  AS REAL) AS points_later_try,

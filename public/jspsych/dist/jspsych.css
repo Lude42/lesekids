@@ -549,3 +549,294 @@
   background: var(--blue) !important;
   box-shadow: 0 6px 0 #0f5790 !important;
 }
+/* ===== Likert als Matrix (kompatibel mit UMD-Plugin: label + ul/li) ===== */
+.lk-matrix { --lk-cols: 5; }
+.lk-matrix.lk-cols-4 { --lk-cols: 4; }
+.lk-matrix.lk-cols-5 { --lk-cols: 5; }
+
+/* Formular als Grid: Spalte 1 (Frage), Spalten 2.. (Antwortspalten) */
+.lk-matrix #jspsych-survey-likert-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) repeat(var(--lk-cols), minmax(64px, 1fr));
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: center;
+}
+
+/* Frage-Text kompakter, Plugin-Padding überschreiben */
+.lk-matrix .jspsych-survey-likert-statement {
+  grid-column: 1 / 2;
+  font-size: 1rem;
+  line-height: 1.35;
+  padding: 6px 4px !important;   /* override plugin (hat 40px top) */
+  margin: 0 !important;
+}
+
+/* Jede UL bildet eine Zeile mit C Spalten → konsistente Spaltenausrichtung */
+.lk-matrix .jspsych-survey-likert-opts {
+  grid-column: 2 / -1;
+  display: grid !important;
+  grid-template-columns: repeat(var(--lk-cols), minmax(64px, 1fr));
+  align-items: center;
+  justify-items: center;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 0 6px !important;   /* kleiner Bodenabstand */
+}
+
+/* Plugin-Linie entfernen */
+.lk-matrix .jspsych-survey-likert-opts:before { display: none !important; }
+
+/* LI-Widths vom Plugin neutralisieren */
+.lk-matrix .jspsych-survey-likert-opts li {
+  width: auto !important;
+  display: flex !important;
+  justify-content: center;
+}
+
+/* Label/Radio größer & touchfreundlich */
+.lk-matrix .jspsych-survey-likert-opt-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  user-select: none;
+}
+
+/* 👉 Variante A: Nur Buttons zeigen (Label-Texte in Zellen ausblenden) */
+.lk-matrix.lk-hide-cell-labels .jspsych-survey-likert-opt-label { 
+  font-size: 0 !important; 
+}
+
+/* Radios groß & mit Fokus-Ring */
+.lk-matrix .jspsych-survey-likert-opt-label input[type="radio"] {
+  width: 26px; height: 26px;
+  accent-color: #1b7cff;
+}
+.lk-matrix .jspsych-survey-likert-opt-label:has(input[type="radio"]:focus-visible) {
+  outline: 2px solid #1b7cff;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Zebra für Fragezeilen (bessere Lesbarkeit) */
+.lk-matrix .jspsych-survey-likert-statement:nth-of-type(odd) {
+  background: rgba(0,0,0,0.035);
+  border-radius: 8px;
+}
+
+/* Submit-Button bündig unter der Matrix */
+.lk-matrix .jspsych-btn {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  min-width: 160px;
+  font-size: 1rem;
+  margin-top: 6px;
+}
+
+/* ===== Responsiv ===== */
+@media (max-width: 900px) {
+  .lk-matrix #jspsych-survey-likert-form {
+    grid-template-columns: 1fr 1fr 1fr; /* Text + 2 Optionenspalten */
+  }
+  .lk-matrix .jspsych-survey-likert-statement {
+    grid-column: 1 / -1;  /* Frage über ganze Breite */
+    background: transparent !important;
+  }
+  .lk-matrix .jspsych-survey-likert-opts {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat( min(var(--lk-cols), 3), 1fr );
+    justify-items: start;
+  }
+  .lk-matrix .jspsych-survey-likert-opt-label { justify-content: flex-start; }
+}
+@media (max-width: 600px) {
+  .lk-matrix #jspsych-survey-likert-form { grid-template-columns: 1fr; }
+  .lk-matrix .jspsych-survey-likert-opts { grid-template-columns: 1fr; }
+  .lk-matrix .jspsych-survey-likert-opt-label input[type="radio"] { width: 28px; height: 28px; }
+}
+
+/* ===== Matrix-Linien & eckige Buttons ===== */
+
+
+/* Radio-Buttons eckig statt rund */
+.lk-matrix .jspsych-survey-likert-opt-label input[type="radio"] {
+  appearance: none;             /* Standard abschalten */
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #1b7cff;
+  border-radius: 4px;           /* leicht eckig */
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Checked-State: füllt blau */
+.lk-matrix .jspsych-survey-likert-opt-label input[type="radio"]:checked {
+  background: #1b7cff;
+}
+
+/* Fokus-Ring */
+.lk-matrix .jspsych-survey-likert-opt-label input[type="radio"]:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Hover-Effekt für bessere Sichtbarkeit */
+.lk-matrix .jspsych-survey-likert-opt-label input[type="radio"]:hover {
+  border-color: #559eff;
+}
+
+/* Einheitliches Raster für Header und Fragen */
+.lk-matrix, .lk-likert-header {
+  --lk-cols: 5; /* default 5, durch Klasse überschreiben */
+}
+
+/* Header-Container */
+.lk-likert-header {
+  display: grid;
+  grid-template-columns: minmax(180px,1fr) repeat(var(--lk-cols), minmax(48px,1fr));
+  column-gap: 2px;                 /* Spalten noch enger */
+  margin-bottom: 8px;
+  align-items: end;
+}
+
+/* Header-Zellen */
+.lk-likert-header div {
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  padding: 2px;
+  font-size: 1rem;                  /* Schriftgröße ↑ */
+}
+
+/* Skalenlabels vertikal */
+.lk-likert-header div:not(:first-child) {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 1rem;                  /* größer als vorher */
+  margin: 0 auto;
+}
+
+/* Formular-Raster enger machen */
+.lk-matrix #jspsych-survey-likert-form {
+  display: grid;
+  grid-template-columns: minmax(180px,1fr) repeat(var(--lk-cols), minmax(48px,1fr));
+  column-gap: 2px;                  /* enger */
+  row-gap: 8px;
+  align-items: center;
+}
+
+/* ===== Kompakt-Modus: enge Spalten mit fixen Pixelbreiten ===== */
+.lk-matrix.lk-compact {
+  --lk-cols: 5;        /* via .lk-cols-4/5 setzen */
+  --lk-cell: 44px;     /* Zellbreite je Spalte */
+  --lk-gap: 1px;       /* Spaltengap */
+  --lk-qmin: 160px;    /* Mindestbreite Frage-Spalte */
+}
+.lk-matrix.lk-compact.lk-cols-4 { --lk-cols: 4 !important; }
+.lk-matrix.lk-compact.lk-cols-5 { --lk-cols: 5 !important;  }
+/* Header und Formular: exakt gleiches Raster mit fixen Zellen */
+.lk-matrix.lk-compact .lk-likert-header,
+.lk-matrix.lk-compact #jspsych-survey-likert-form {
+  display: grid;
+  grid-template-columns: minmax(var(--lk-qmin), 1fr)
+                         repeat(var(--lk-cols), var(--lk-cell));
+  column-gap: var(--lk-gap);
+  row-gap: 6px;
+  align-items: center;
+  justify-items: center;
+}
+
+/* Header-Zellen größer, vertikal */
+.lk-matrix.lk-compact .lk-likert-header div {
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  padding: 0;
+  margin: 0;
+}
+
+.lk-matrix.lk-compact .lk-likert-header > div:not(:first-child) {
+  writing-mode: vertical-rl;
+  text-orientation: sideways-right;
+  white-space: nowrap;
+  width: var(--lk-cell);
+  height: var(--lk-header-h);
+  display: flex;
+  align-items: flex-start;   /* 👈 oben ausrichten */
+  justify-content: center !important;   /* mittig in der Spalte */
+  padding-top: 4px;          /* kleiner Abstand vom oberen Rand */
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 16px;
+  margin: 1;
+  font-size: 0.95rem;
+  line-height: 1.1;
+}
+
+.lk-matrix.lk-compact .jspsych-survey-likert-statement {
+  grid-column: 1 / 2;
+  font-size: 1rem;
+  line-height: 1.35;
+  padding: 4px 0 !important;      /* Plugin-Top-Padding überschreiben */
+  margin: 0 !important;
+  width: 100%;
+  text-align: right;               /* reicht für rechtsbündig */
+  padding-right: 6px;
+  /* justify-self: stretch;        <-- eine Option wählen
+     justify-self: end;            <-- beide zusammen vermeiden */
+}
+
+
+/* ✅ UL-Zeilen bleiben Grid mit fixen Spaltenbreiten (wie bei dir) */
+.lk-matrix.lk-compact .jspsych-survey-likert-opts {
+  grid-column: 2 / -1;
+  display: grid !important;
+  grid-template-columns: repeat(var(--lk-cols), var(--lk-cell));
+  column-gap: var(--lk-gap);
+  row-gap: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.lk-matrix.lk-compact .jspsych-survey-likert-opts:before { display: none !important; }
+
+
+//* ✅ Zellen & eckige Radios (deine Regeln sind okay) */
+.lk-matrix.lk-compact .jspsych-survey-likert-opts li {
+  width: var(--lk-cell) !important;
+  height: 42px; min-height: 42px;
+  display: flex !important; align-items: center; justify-content: center;
+  margin: 0 !important; padding: 0 !important;
+}
+.lk-matrix.lk-compact .jspsych-survey-likert-opt-label {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0; padding: 0; margin: 0;
+  font-size: 0.9rem;
+}
+.lk-matrix.lk-compact.lk-hide-cell-labels .jspsych-survey-likert-opt-label { font-size: 0 !important; }
+
+.lk-matrix.lk-compact .jspsych-survey-likert-opt-label input[type="radio"] {
+  appearance: none; -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border: 2px solid #1b7cff; border-radius: 4px;
+  background: #fff; cursor: pointer;
+}
+.lk-matrix.lk-compact .jspsych-survey-likert-opt-label input[type="radio"]:checked { background: #1b7cff; }
+.lk-matrix.lk-compact .jspsych-survey-likert-opt-label input[type="radio"]:focus-visible {
+  outline: 2px solid #fff; outline-offset: 2px;
+}
+
+/* Responsiv: auf sehr schmal noch enger */
+@media (max-width: 900px) {
+  .lk-matrix.lk-compact { --lk-cell: 40px; --lk-qmin: 150px; }
+}
+@media (max-width: 700px) {
+  .lk-matrix.lk-compact { --lk-cell: 36px; --lk-qmin: 140px; }
+}

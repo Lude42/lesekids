@@ -1,5 +1,7 @@
 // public/js/manuale-scoring.js
-const items = window.items || [];
+import { items } from "/js/items.js";
+console.log("items", items);
+//const window.items =  items|| [];
 // --- Deterministische Randomisierung pro Scorer -----------------------------
 
 function stringHash(str) {
@@ -172,7 +174,7 @@ function renderTaskBlock(item, answers) {
 async function renderAll() {
   tasksEl.innerHTML = "";
 
-  const allItems = Array.isArray(window.items) ? window.items : [];
+  const allItems = Array.isArray(items) ? items : [];
   if (!allItems.length) {
     tasksEl.innerHTML = "<p class='err'>items.js nicht gefunden/geladen.</p>";
     return;
@@ -180,7 +182,7 @@ async function renderAll() {
 
   // nur offene Items
   const openItems = allItems.filter((it) => it.type === "open" || (!Array.isArray(it.opt)));
-
+console.log("openItems", openItems)
   // ➜ deterministisch pro Scorer mischen
   const rng = mulberry32(stringHash(String(scorer || "anon")));
   shuffleInPlace(openItems, rng);

@@ -32,22 +32,62 @@
 
   // ★ Hierher verschoben + API_BASE genutzt
   window.saveAllData = async function saveAllData(subject_id) {
-    const rows = jsPsych.data.get().values().map(row => ({
-      subject_id: subject_id ?? row.subject_id ?? null,
-      trial_index: row.trial_index ?? null,
-      type: row.type ?? null,
-      question_type: row.question_type ?? null,
-      item: row.item ?? null,
-      stimulus: typeof row.stimulus === 'string' ? row.stimulus : JSON.stringify(row.stimulus ?? null),
-      response: (row.response !== undefined ? JSON.stringify(row.response) : null),
-      normalized_answer: row.normalized_answer ?? null,
-      correct: !!row.correct,
-      rt_fast: !!row.rt_fast,
-      rt: row.rt ?? null,
-      score: row.score ?? null,
-      points_awarded: row.points_awarded ?? null,
-      llm_rationale: row.llm_rationale ?? null
-    }));
+	  const lastRow = jsPsych.data.get().last(1).values()[0] || {};
+  const anyRow  = jsPsych.data.get().values()[0] || {};
+
+  const sid = anyRow.subject_id ?? null
+
+  const cid =  anyRow.class_id ?? null;
+	  
+const rows = jsPsych.data.get().values().map(row => {
+  // Helper: Integerprüfung
+  const parseResponse = (resp) => {
+    if (resp === undefined || resp === null) return -9;
+
+    // Falls response schon eine Zahl ist
+    if (Number.isInteger(resp)) return resp;
+
+    // Falls response ein String ist, versuche zu parsen
+    const parsed = Number(resp);
+    return Number.isInteger(parsed) ? parsed : -9;
+  };
+
+  return {
+    subject_id: subject_id ?? row.subject_id ?? null,
+    class_id: class_id ?? row.class_id ?? null,
+    trial_index: row.trial_index ?? null,
+    type: row.type ?? null,
+    question_type: row.question_type ?? null,
+    item: row.item ?? null,
+    stimulus: typeof row.stimulus === 'string' ? row.stimulus : JSON.stringify(row.stimulus ?? null),
+    response: parseResponse(row.response),
+    normalized_answer: row.normalized_answer ?? null,
+    correct: !!row.correct,
+    rt_fast: !!row.rt_fast,
+    rt: row.rt ?? null,
+    score: row.score ?? null,
+    points_awarded: row.points_awarded ?? null,
+    llm_rationale: row.llm_rationale ?? null
+  };
+});
+// ⇩⇩⇩ HIER den "end"-Marker anhängen (wird mitgespeichert)
+rows.push({
+  subject_id: sid,
+  class_id: cid,
+  trial_index: null,              // optional
+  type: 0,
+  question_type: "end",
+  item: null,
+  stimulus: -99,                  // eindeutiger Marker
+  response: -9,                   // gemäß Vorgabe: non-int -> -9
+  normalized_answer: null,
+  correct: null,
+  rt_fast: 0,
+  rt: null,
+  score: null,
+  points_awarded: null,
+  llm_rationale: null
+});
 
     if (rows.length === 0) return "Keine Daten";
 

@@ -121,7 +121,13 @@ function makeFeedbackNode(selectedItems) {
     },
     choices: ["Weiter 🚀"],
     on_finish: (d) => (d.stimulus = -2),
-    data: { type: 2 },
+    data: function () {
+      const last = jsPsych.data.get().last(1).values()[0] || {};
+      return {
+        type: 2,
+        question_type: last.question_type ?? null,
+      };
+    },
   };
 }
 	

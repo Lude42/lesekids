@@ -1,4 +1,5 @@
 // server/score-open.js
+import 'dotenv/config';  
 import express from "express";
 import OpenAI from "openai";
 import crypto from "crypto";
