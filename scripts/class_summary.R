@@ -1,6 +1,6 @@
 # estimate.R
-setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_projekt/lesekids/scripts")
-#setwd("/home/appuser/lesekids/scripts")
+#setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_projekt/lesekids/scripts")
+setwd("/home/appuser/lesekids/scripts")
 rm(list = ls())
 library(DBI)
 library(RSQLite)  # oder RPostgres, je nach DB
