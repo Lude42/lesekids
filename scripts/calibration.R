@@ -1,7 +1,7 @@
 # estimate.R
-#setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_projekt/lesekids/scripts")
-setwd("/home/appuser/lesekids")
-#rm(list = ls())
+setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_projekt/lesekids/scripts")
+#setwd("/home/appuser/lesekids/scripts")
+rm(list = ls())
 library(DBI)
 library(RSQLite)  # oder RPostgres, je nach DB
 library(TAM)
@@ -39,17 +39,22 @@ wdataIr <- dataIr %>%
 # 4. Modell schätzen
 modelIr <- TAM::tam.mml(as.matrix(wdataIr), verbose = F)
 
+wle2a <- TAM::tam.mml.wle(modelIr )
+summary(data.frame(wle2a))
+#input <- list(resp=modelIr$resp, AXsi=modelIr$AXsi, B= modelIr$B )
+#wle2b <- TAM::tam.mml.wle(input )
+#summary(data.frame(wle2b))
+
 # 5. item flags 
 modelIrFit  <- IRT.itemfit(modelIr)
 
 itemFit <- modelIrFit$RMSD %>% 
-  mutate(RMSD = Group1) %>% 
+  mutate(RMSD = Group1, item = as.integer(item)) %>% 
   select(item, RMSD)
 
-itemParResp<- data.frame(item = row.names(modelIr$xsi),
+itemParResp<- data.frame(item = as.integer(row.names(modelIr$xsi)),
                      xsi2 = modelIr$xsi$xsi,
-                     sexsi2 = modelIr$xsi$se.xsi
-)
+                     sexsi2 = modelIr$xsi$se.xsi)
 
 
 # Bearbeitungszeit
@@ -88,17 +93,20 @@ modelParams <- data.frame(IrVar = modelIr$variance,
                             "%Y-%m-%dT%H:%M:%OS3Z")
            )
 
-
+str(itemParResp)
+str(itemFit)
+str(itemParTime)
+str(itemStack)
+modelIr$item
 
 # 6. Itemparameter extrahieren
-params <- modelIr$item %>%
+params <- modelIr$item %>% mutate(item = as.integer(item) ) %>% 
   merge(.,itemParResp, by = "item") %>%
   merge(.,itemFit, by = "item") %>%
   merge(.,itemParTime, by = "item") %>%
   merge(.,itemStack, by = "item", all = T) %>%
-  mutate(item = as.integer(item),
-         N = as.integer(ifelse(is.na(N), 0, N)),
-         threshold_2 = ifelse(is.na(xsi2), mean(itemParResp$xsi2), 
+  mutate(N = as.integer(ifelse(is.na(N), 0, N)),
+         threshold_2 = ifelse(is.na(xsi2), mean(itemParResp$xsi2),
                                 ifelse(xsi2 < -5,-5, 
                                        ifelse(xsi2 > 2,2,
                                               xsi2))),

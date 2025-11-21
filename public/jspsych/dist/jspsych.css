@@ -720,7 +720,7 @@
   transform: rotate(180deg);
   white-space: nowrap;
   line-height: 1.2;
-  font-size: 1rem;                  /* größer als vorher */
+  font-size: 1rem;
   margin: 0 auto;
 }
 

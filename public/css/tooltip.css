@@ -2,7 +2,7 @@
 .tooltip {
   position: relative;
   cursor: help;
-  border-bottom: 1px dotted var(--lk-muted); /* dezente Linie in Missions-Farbe */
+  border-bottom: 1px dotted orange; /* oder var(--lk-orange) */
   color: var(--lk-text);
 }
 

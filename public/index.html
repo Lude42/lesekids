@@ -2,8 +2,9 @@
 <html lang="de">
   <head>
     <meta charset="utf-8" />
-    <title>LESEKIDS MISSON</title>
+    <title>LeseKI:DS Misson</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/img/lesekids_favicon.ico" />
 
     <!-- Styles -->
     <link rel="stylesheet" href="jspsych/dist/jspsych.css" />
@@ -220,7 +221,7 @@ function getMotivationTodayLSKey(subject_id) { return `motivation_daily__${subje
       /* ============================================================
        * 3) Konstanten & globale Referenzen
        * ============================================================ */
-      const ITEMS_PER_SESSION = 20;
+      const ITEMS_PER_SESSION = 53;
       window.items = []; // Auswahl der Items der Session
 
       /* ============================================================
@@ -232,8 +233,8 @@ function getMotivationTodayLSKey(subject_id) { return `motivation_daily__${subje
       function renderMissionControl({ points = 0, days = 0, last = "–", tasks = 0, theta = "—" }) {
         const thetaStr = typeof theta === "number" ? theta.toFixed(3) : theta;
         return `
-          <section class="lk-console" role="region" aria-label="Lesekids Mission Control">
-            <h3 class="lk-title-mini"><span aria-hidden="true">🚀</span> LESKIDS MISSION CONTROL</h3>
+          <section class="lk-console" role="region" aria-label="LeseKI:DS Mission Control">
+            <h3 class="lk-title-mini"><span aria-hidden="true">🚀</span> LeseKI:DS Mission Control</h3>
             <div class="lk-status" aria-label="Systemstatus LEDs">
               <span class="lk-led lk-led--ok" title="Systemstatus: OK"></span>
               <span class="lk-led lk-led--link" title="Funkverbindung stabil"></span>
@@ -245,7 +246,7 @@ function getMotivationTodayLSKey(subject_id) { return `motivation_daily__${subje
                 <div><dt>Plasma‑Treibstoff</dt>   <dd><strong>${safe(points)}</strong></dd></div>
                 <div><dt>Missionstage aktiv</dt>  <dd><strong>${safe(days)}</strong></dd></div>
                 <div><dt>Letzter Funkkontakt</dt> <dd><strong>${safe(last)}</strong></dd></div>
-                <div><dt>Abgeschlossene Module</dt><dd><strong>${safe(tasks)}</strong></dd></div>
+                <div><dt>Abgeschlossene Aufgaben</dt><dd><strong>${safe(tasks)}</strong></dd></div>
                 <div><dt>🧭 Navigator‑Skill θ</dt> <dd><strong>${thetaStr}</strong></dd></div>
               </dl>
             </article>
@@ -454,6 +455,12 @@ console.log("thetaData", theta)
         // Inhalte laden
         const selectedFull = await loadItemsByIds(selectedIds);
         const selectedItems = selectedFull || [];
+// Fisher-Yates Shuffle
+for (let i = selectedItems.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [selectedItems[i], selectedItems[j]] = [selectedItems[j], selectedItems[i]];
+}
+
         window.items = selectedItems;
 
         // Mission-Control Panel (oben)
@@ -530,7 +537,7 @@ console.log("thetaData", theta)
             const header = `
               <div class="card">
                 <img src="img/lesekids_logo.png" alt="LeseKI:DS Logo" class="logo" />
-                <h2>Willkommen bei Lesekids‑Quiz, ${subject_id}</h2>
+                <h2>Willkommen bei LeseKI:DS Mission, ${subject_id}</h2>
             `;
             const footer = `
                 <p style="margin-top:1rem;">Klicke auf „Start“, um fortzufahren.</p>

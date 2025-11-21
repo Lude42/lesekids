@@ -1,7 +1,7 @@
 # estimate.R
 setwd("C:/Users/mulrlude/Documents/App lesekids/lesekids_projekt/lesekids/scripts")
-#setwd("/home/appuser/lesekids")
-#rm(list = ls())
+#setwd("/home/appuser/lesekids/scripts")
+rm(list = ls())
 library(DBI)
 library(RSQLite)  # oder RPostgres, je nach DB
 library(TAM)
@@ -51,7 +51,12 @@ ir <- data %>%
   mutate(n_sub = n() ) %>% 
   ungroup() %>% 
   filter(n_sub > 5) %>%
-  mutate(score = ifelse(score == 1, 0, ifelse(score == 2, 1, score)) ) %>% 
+  mutate(score = ifelse(score == 1, 0, 
+                        ifelse(score == 2, 1, 
+                               ifelse(score == 0,0,NA)
+                               )
+                        )
+         ) %>% 
   select(-n_sub) %>%
   tidyr::pivot_wider(names_from = item, 
                      values_from = score, values_fill = NA) 
@@ -60,19 +65,25 @@ irMx <- ir  %>%
   dplyr::select(-subject_id, -class_id, -day) %>% 
   as.matrix()
 #summary(irMx)
-id <- ir  %>%  dplyr::select(subject_id, class_id, day) %>% as.matrix()
+id <- ir  %>%  dplyr::select(subject_id, class_id, day)
 AXsi <- cbind(0, params[match(as.integer(colnames(irMx)), params$item),
                         "threshold_2"])
-params[match(as.integer(colnames(irMx)), params$item),"item"]
+items <- params[match(as.integer(colnames(irMx)), params$item),"item"]
+
 
 I <- ncol(irMx)
 B <- array(0, dim = c(I, 2, 1))
 B[, 2, 1] <- 1
+dimnames(B) <- list(c(items), c("Cat0","Cat1" ),c("Dim01"))
+#AXsi[,2] <- 1
+hist(AXsi[,2])
 
 input <- list(resp=irMx, AXsi=AXsi, B=B )
-wle2b <- TAM::tam.mml.wle2(input )
+wle2b <- data.frame(TAM::tam.mml.wle(input ))
+summary(data.frame(wle2b))
 personIr <- cbind(id, wle2b)
-#hist(personIr$theta)
+
+hist(data.frame(wle2b)$theta)
 #summary(AXsi)
 #hist(AXsi[,2])
 summary(data.frame(wle2b))
@@ -80,7 +91,8 @@ summary(data.frame(wle2b))
 
 rtMx <- data %>% 
   select(subject_id,class_id, day,item,rt2) %>%
-  inner_join(params %>% select(item, timeIntensity), by="item") %>%
+  inner_join(params %>% select(item, timeIntensity), 
+             by="item") %>%
   mutate(resid  = rt2 - timeIntensity)
 
 tau2_hat <- modelParams$RtTau2
@@ -128,11 +140,54 @@ log_norm <- logsumexp(log_fluency, log_speeded)
 
 person$P_fluency <- exp(log_fluency - log_norm)
 person$P_speeded <- exp(log_speeded - log_norm)
+summary(person)
+
+class_summary <- person %>% data.frame() %>%
+  select(subject_id,class_id, day, theta, error, zeta, P_fluency, n_obs) %>% 
+  mutate(theta = round(scale(theta)*2+5),
+         theta = ifelse(theta > 10, 10, ifelse(theta < 1, 1, theta)),
+         theta_se = (error* (1/sd(person$theta)))*2,
+         zeta = round(scale(zeta)*2+5),
+         zeta = ifelse(zeta > 10, 10, ifelse(zeta < 1, 1, zeta)),
+         P_fluency = round(P_fluency*100),
+         estDate = format(as.POSIXct(Sys.time(), tz = "UTC"),
+                          "%Y-%m-%dT%H:%M:%OS3Z")
+         ) %>% arrange(desc(day)) %>% select(-error) %>%
+  group_by(subject_id,class_id) %>% 
+  mutate(r = row_number()) %>% 
+  filter(r <= 3) %>% 
+  tidyr::pivot_wider(names_from = r, 
+                     values_from = c(theta, theta_se, zeta, P_fluency,n_obs, day), values_fill = NA) %>% 
+  mutate(Trend = ifelse(is.na(day_2), NA,
+                        ifelse(
+                          is.na(day_3), round(theta_2 - theta_1),
+                        round(theta_2 - theta_2)) ),
+         theta = ifelse(is.na(day_2), theta_1,
+                       ifelse(
+                         is.na(day_3), theta_2,
+                         theta_3) ),
+         theta_se = ifelse(is.na(theta_se_2), theta_se_1,
+                        ifelse(
+                          is.na(theta_se_3), theta_se_2,
+                          theta_se_3) ),
+         h = round(theta+theta_se),
+         h = ifelse(h > 10, 10, ifelse(h < 1, 1, h)),
+         l = round(theta-theta_se),
+         l = ifelse(l > 10, 10, ifelse(l < 1, 1, l)),
+         last_test = ifelse(is.na(day_2), day_1,
+                        ifelse(
+                          is.na(day_3), day_2,
+                          day_3)), 
+         speeded = ifelse(rowSums(cbind(P_fluency_1 < 30,
+                                        P_fluency_2 < 30,
+                                        P_fluency_3 < 30), na.rm = TRUE) > 0, 0,1)
+         ) %>% 
+  select(class_id,subject_id,last_test,theta,h,l, Trend, speeded)
+summary(class_summary )
+names(class_summary)
 
 
-class_summary <- person %>% 
-  select(subject_id,class_id, day, theta, zeta, P_fluency) %>% 
-  mutate(estDate = format(as.POSIXct(Sys.time(), tz = "UTC"),"%Y-%m-%dT%H:%M:%OS3Z"))
+
 
 con <- dbConnect(SQLite(), "../data/test.db")  # Pfad zur DB
 
@@ -160,6 +215,5 @@ dbExecute(con, "
 
 dbExecute(con, "DROP TABLE temp_class_summary")
 
-#person %>% ggplot2::ggplot(aes(x = theta, y = zeta)) + 
-#  geom_point(aes(color = P_speeded) )
+
 

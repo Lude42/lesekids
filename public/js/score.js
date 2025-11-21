@@ -72,7 +72,7 @@ async function scoreWithLLM({ questionHtml, studentAnswer, item }) {
       question: questionHtml,
       student_answer: studentAnswer,
       accept: item?.accept || [],
-      reject: item?.reject || [],
+      //reject: item?.reject || [],
       policy: { lenient: true, always_llm: true } // stelle auf false, wenn strenger bewertet werden soll
     };
 
@@ -125,7 +125,7 @@ async function scoreWithLLM({ questionHtml, studentAnswer, item }) {
     const fallback = {
       is_correct: !!ok,
       score: ok ? 1 : 0,
-      rationale: "Lokaler Fallback (String-Match).",
+      rationale: "Ich bin mir nicht ganz sicher. Es geht weiter.",
       normalized_answer: String(studentAnswer ?? ""),
       source: "local-fallback"
     };

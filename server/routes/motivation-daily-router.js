@@ -13,11 +13,12 @@ export default function motivationDailyRouter(db) {
     const { subject_id } = req.params;
     const dayParam = req.query.day; // optional
     const sql = `
-      SELECT 1
-      FROM motivation_daily
-      WHERE subject_id = ?
-        AND day = COALESCE(?, ${todaySQL})
-      LIMIT 1
+          SELECT day
+    FROM motivation_daily
+    WHERE subject_id = ?
+      AND day >= DATE('now','localtime','-14 days')
+    ORDER BY day DESC
+    LIMIT 1
     `;
     db.get(sql, [subject_id, dayParam || null], (err, row) => {
       if (err) {
