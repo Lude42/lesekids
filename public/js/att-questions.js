@@ -50,8 +50,8 @@ const saveMotivationDailyBlock = {
 };
 
 // Skalen
-const Zustimmung = ["überhaupt nicht", "wenig", "einigermaßen", "stark", "sehr stark"];
-const Haeufigkeit = ["Nie oder fast nie","Ein- bis zweimal pro Monat","Ein- bis zweimal die Woche","Jeden Tag oder fast jeden Tag"];
+const Zustimmung = ["(0) überhaupt nicht", "(1) wenig", "(2) einigermaßen", "(3) stark", "(4) sehr stark"];
+const Haeufigkeit = ["(0) Nie oder fast nie","(1) Ein- bis zweimal pro Monat","(2) Ein- bis zweimal die Woche","(3) Jeden Tag oder fast jeden Tag"];
 
 const header5 = `
   <div class="lk-likert-header" style="--lk-cols:5;">
