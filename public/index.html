@@ -82,23 +82,73 @@
       /* ============================================================
        * 0) jsPsych Init
        * ============================================================ */
-      const jsPsych = initJsPsych({
-        experiment_width: 750,
-        show_progress_bar: false,
-        on_close: function () {
-          fetch("/api/save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(jsPsych.data.get().values()),
-          })
-            .then((r) => {
-              if (!r.ok) throw new Error("Fehler beim Speichern");
-              return r.text();
-            })
-            .then((msg) => console.log("Erfolgreich gespeichert:", msg))
-            .catch((e) => console.error("Fehler beim Speichern:", e));
-          }
-      });
+
+       // Hilfsfunktion: einen einzelnen Trial direkt speichern
+async function saveTrialIncremental(trialData) {
+  try {
+    const payload = JSON.stringify([trialData]);
+
+    const res = await fetch("/api/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload
+    });
+
+    if (res.ok) {
+      // Wichtig: last-Trial im jsPsych-Store als "saved" markieren
+      jsPsych.data.get().addToLast({ saved: true });
+    } else {
+      console.error("Inkrementelles Speichern fehlgeschlagen:", res.status);
+    }
+  } catch (e) {
+    console.error("Fehler beim inkrementellen Speichern:", e);
+  }
+}
+
+
+const jsPsych = initJsPsych({
+  experiment_width: 750,
+  show_progress_bar: false,
+
+  // NEU: nach jedem Trial speichern
+on_data_update: function () {
+  try {
+    const last = jsPsych.data.get().last(1).values()[0];
+    if (!last) return;
+
+    // NUR speichern, wenn ein echtes Item vorliegt
+    if (last.item === null || last.item === undefined) {
+      return; // → nicht speichern
+    }
+
+    saveTrialIncremental(last);
+  } catch (e) {
+    console.error("Fehler bei on_data_update:", e);
+  }
+},
+
+  // Backup: alles noch einmal beim Schließen schicken
+on_close: function () {
+  try {
+    // Nur Trials, die noch NICHT erfolgreich gespeichert wurden
+    const unsaved = jsPsych.data.get().filterCustom((t) => t.saved !== true).values();
+
+    if (unsaved.length === 0) {
+      console.log("on_close: Alle relevanten Trials bereits gespeichert.");
+      return;
+    }
+
+    const payload = JSON.stringify(unsaved);
+    const blob = new Blob([payload], { type: "application/json" });
+    const ok = navigator.sendBeacon("/api/save", blob);
+    console.log("sendBeacon on_close (unsaved only):", ok);
+  } catch (e) {
+    console.error("Fehler beim Senden mit sendBeacon:", e);
+  }
+}
+});
+
+
 
 
       /* ============================================================
@@ -303,7 +353,7 @@ function getMotivationTodayLSKey(subject_id) { return `motivation_daily__${subje
 
       function getClassIdFromURL() {
         const params = new URLSearchParams(window.location.search);
-        return params.get("class") || jsPsych.randomization.randomInt(100000000, 999999999);
+        return params.get("class") || 999999999;
       }
       const subject_id = getSubjectIdFromURL();
       const class_id = getClassIdFromURL();
@@ -361,7 +411,7 @@ async function boot() {
       stimulus: `
         <div class="card">
           <h3>Super, danke!</h3>
-          <p>Jetzt kommen noch einpaar Fragen dazu, wie du übers lesen denkst.</p>
+          <p>Jetzt kommen noch ein paar Fragen dazu, wie du übers Lesen denkst.</p>
           <p>Antworte einfach frei aus dem Bauch heraus.</p>
         </div>`,
       choices: ["Weiter 🚀"],

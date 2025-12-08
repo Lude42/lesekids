@@ -21,7 +21,7 @@ function mapDemoResponses(r1, r2, r3, r4) {
   };
   const mapBok = {
     "Keine oder nur sehr wenige (0-10)<img src='img/book10.png' alt='10 buecher' width='1000'>": 1,
-    "Genug, um ein regalbrett zu füllen (11-25)<img src='img/book25.png' alt='25 buecher' width='1000'>": 2,
+    "Genug, um ein Regalbrett zu füllen (11-25)<img src='img/book25.png' alt='25 buecher' width='1000'>": 2,
     "Genug, um ein Regal zu füllen (26-100)<img src='img/book100.png' alt='100 buecher' width='1000'>": 3,
     "Genug, um zwei Regale zu füllen (101-200 Bücher)<img src='img/book200.png' alt='200 buecher' width='1000'>": 4,
     "Genug, um drei oder mehr Regale zu füllen (über 200 Bücher)<img src='img/booku200.png' alt='>200 buecher' width='1000'>": 5
@@ -94,7 +94,7 @@ const onboard4 = {
   type: jsPsychHtmlButtonResponse,
   stimulus: createOnboardStimulus(
     "Dein Boardcomputer hilft",
-    "Wenn du nicht weiter weißt bekommst du Tipps: Was wichtig ist, Was Wörter bedeuten und Woran man denken muss.",
+    "Wenn du nicht weiter weißt bekommst du Tipps: Was wichtig ist, was Wörter bedeuten und woran man denken muss.",
     "img/onboard3.png"
   ),
   choices: ["Weiter 🚀"],
@@ -104,7 +104,7 @@ const onboard5 = {
   type: jsPsychHtmlButtonResponse,
   stimulus: createOnboardStimulus(
     "Bevor es losgehen kann",
-    "Der Boardcomputer will einpaar Dinge über dich wissen, damit er dir gut helfen kann. Danach wird Plasmatreibstoff gesammelt!",
+    "Der Boardcomputer will ein paar Dinge über dich wissen, damit er dir gut helfen kann. Danach wird Plasmatreibstoff gesammelt!",
     "img/onboard4.png"
   ),
   choices: ["Weiter 🚀"],

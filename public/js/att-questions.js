@@ -74,7 +74,7 @@ const header4 = `
 const mov1 = {
   type: jsPsychSurveyLikert,
   css_classes: ["lk-matrix","lk-cols-5","lk-hide-cell-labels","lk-compact"],
-  preamble: `<h3>Ich lese weil...</h3>${header5}`,
+  preamble: `<h3>Wie sehr stimmst du den Aussagen zu?</h3>${header5}`,
   button_label: "Weiter >",
   randomize_question_order: false,
   questions: [
@@ -92,7 +92,7 @@ const mov1 = {
 const mov2 = {
   type: jsPsychSurveyLikert,
   css_classes: ["lk-matrix","lk-cols-5","lk-hide-cell-labels","lk-compact"],
-  preamble: `<h3>Ich lese weil...</h3>${header5}`,  // header5 nutzt --lk-cols:5
+  preamble: `<h3>Wie sehr stimmst du den Aussagen zu?</h3>${header5}`,  // header5 nutzt --lk-cols:5
   button_label: "Weiter >",
   randomize_question_order: false,
   questions: [

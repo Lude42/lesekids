@@ -126,6 +126,7 @@ function makeFeedbackNode(selectedItems) {
       return {
         type: 2,
         question_type: last.question_type ?? null,
+        item: last.item ?? null
       };
     },
   };

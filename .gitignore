@@ -1,3 +1,6 @@
 .env
 data/test.db
+data/test.dv
 node_modules/
+data/seed.json
+data/seed_data.json

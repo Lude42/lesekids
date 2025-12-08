@@ -9,25 +9,25 @@ export default function motivationDailyRouter(db) {
   const todaySQL = `DATE('now','localtime')`;
 
   // STATUS: /api/motivation-daily/status/:subject_id?day=YYYY-MM-DD
-  router.get("/status/:subject_id", (req, res) => {
-    const { subject_id } = req.params;
-    const dayParam = req.query.day; // optional
-    const sql = `
-          SELECT day
+router.get("/status/:subject_id", (req, res) => {
+  const { subject_id } = req.params;
+  const sql = `
+    SELECT day
     FROM motivation_daily
     WHERE subject_id = ?
       AND day >= DATE('now','localtime','-14 days')
     ORDER BY day DESC
     LIMIT 1
-    `;
-    db.get(sql, [subject_id, dayParam || null], (err, row) => {
-      if (err) {
-        console.error("[motivation-daily:status] DB-Fehler:", err.message);
-        return res.status(500).json({ error: "DB-Fehler" });
-      }
-      res.json({ completed: !!row });
-    });
+  `;
+  db.get(sql, [subject_id], (err, row) => {
+    if (err) {
+      console.error("[motivation-daily:status] DB-Fehler:", err.message);
+      return res.status(500).json({ error: "DB-Fehler" });
+    }
+    res.json({ completed: !!row });
   });
+});
+
 
   // POST: /api/motivation-daily  (legt für heute ab, UNIQUE(subject_id, day))
   router.post("/", express2.json(), (req, res) => {

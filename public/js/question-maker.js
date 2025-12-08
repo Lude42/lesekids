@@ -190,6 +190,7 @@ function makeQuestionTrial(item) {
           : -43;
       data.total_points = totalPoints;
       data.tasks_completed = tasksCompleted;
+      data.response = 0;
     },
   };
 }

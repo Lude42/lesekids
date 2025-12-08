@@ -188,63 +188,89 @@ FROM raw_responses;
 
     db.run(`
       CREATE VIEW IF NOT EXISTS consensus AS
-      WITH agg AS (
-        SELECT item, normalized_answer,
-               COUNT(*) AS n_scores,
-               SUM(CASE WHEN human_score = 1 THEN 1 ELSE 0 END) AS n_correct,
-               SUM(CASE WHEN human_score = 0 THEN 1 ELSE 0 END) AS n_wrong
-        FROM human_scores
-        GROUP BY item, normalized_answer
-      ),
-      human_consensus AS (
-        SELECT item, normalized_answer, n_scores, n_correct, n_wrong,
-               CASE WHEN n_correct >= 2 THEN 1 ELSE 0 END AS human_consensus_score
-        FROM agg
-        WHERE (n_scores = 2 AND (n_correct = 2 OR n_wrong = 2))
-           OR (n_scores = 3 AND (n_correct >= 2 OR n_wrong >= 2))
-      )
-      SELECT h.item, h.normalized_answer, h.human_consensus_score,
-             a.ai_score, h.n_scores, h.n_correct, h.n_wrong
-      FROM human_consensus h
-      LEFT JOIN ai_scores a
-        ON a.item = h.item AND a.normalized_answer = h.normalized_answer;`);
+WITH agg AS (
+    SELECT item, normalized_answer,
+           COUNT(*) AS n_scores,
+           SUM(CASE WHEN human_score = 1 THEN 1 ELSE 0 END) AS n_correct,
+           SUM(CASE WHEN human_score = 0 THEN 1 ELSE 0 END) AS n_wrong
+    FROM human_scores
+    WHERE human_score IS NOT NULL
+    GROUP BY item, normalized_answer
+),
+human_consensus AS (
+    SELECT item, normalized_answer, n_scores, n_correct, n_wrong,
+           CASE WHEN n_correct >= 2 THEN 1 ELSE 0 END AS human_consensus_score
+    FROM agg
+    WHERE (n_scores = 2 AND (n_correct = 2 OR n_wrong = 2))
+       OR (n_scores = 3 AND (n_correct >= 2 OR n_wrong >= 2))
+),
+ai_clean AS (
+    SELECT item, normalized_answer, ai_score
+    FROM ai_scores
+    WHERE ai_score IS NOT NULL    -- hier werden nur vorhandene NULLs gefiltert
+)
+SELECT h.item, h.normalized_answer, h.human_consensus_score,
+       a.ai_score, h.n_scores, h.n_correct, h.n_wrong
+FROM human_consensus h
+ JOIN ai_clean a
+  ON a.item = h.item AND a.normalized_answer = h.normalized_answer;`);
 
     db.run(`
       CREATE VIEW IF NOT EXISTS human_pairwise_ir_v AS
-      WITH pairs AS (
-        SELECT h1.item, h1.scorer AS r1, h2.scorer AS r2,
-               h1.normalized_answer, h1.human_score AS s1, h2.human_score AS s2
-        FROM human_scores h1
-        JOIN human_scores h2
-          ON h1.item = h2.item
-         AND h1.normalized_answer = h2.normalized_answer
-         AND h1.scorer < h2.scorer
-      ),
-      per_pair AS (
-        SELECT item, r1, r2,
-               COUNT(*) AS n,
-               SUM(CASE WHEN s1 = s2 THEN 1 ELSE 0 END) AS n_agree,
-               SUM(s1) AS n_yes_r1,
-               SUM(s2) AS n_yes_r2
-        FROM pairs
-        GROUP BY item, r1, r2
+  WITH pairs AS (
+    SELECT
+      h1.item,
+      h1.scorer AS r1,
+      h2.scorer AS r2,
+      h1.normalized_answer,
+      h1.human_score AS s1,
+      h2.human_score AS s2
+    FROM human_scores h1
+    JOIN human_scores h2
+      ON h1.item = h2.item
+     AND h1.normalized_answer = h2.normalized_answer
+     AND h1.scorer < h2.scorer
+  ),
+  per_pair AS (
+    SELECT
+      r1,
+      r2,
+      COUNT(*) AS n,
+      SUM(CASE WHEN s1 = s2 THEN 1 ELSE 0 END) AS n_agree,
+      SUM(s1) AS n_yes_r1,
+      SUM(s2) AS n_yes_r2
+    FROM pairs
+    GROUP BY r1, r2
+  )
+  SELECT
+    r1,
+    r2,
+    n,
+    CAST(n_agree AS REAL) / n AS po,
+    CASE
+      WHEN (1 - (1
+                 - (CAST(n_yes_r1 AS REAL) / n)
+                 - (CAST(n_yes_r2 AS REAL) / n)
+                 + 2 * (CAST(n_yes_r1 AS REAL) / n) * (CAST(n_yes_r2 AS REAL) / n)
+                )) = 0
+      THEN NULL
+      ELSE (
+        (CAST(n_agree AS REAL) / n)
+        - (1
+           - (CAST(n_yes_r1 AS REAL) / n)
+           - (CAST(n_yes_r2 AS REAL) / n)
+           + 2 * (CAST(n_yes_r1 AS REAL) / n) * (CAST(n_yes_r2 AS REAL) / n)
+          )
+      ) / (
+        1 - (1
+             - (CAST(n_yes_r1 AS REAL) / n)
+             - (CAST(n_yes_r2 AS REAL) / n)
+             + 2 * (CAST(n_yes_r1 AS REAL) / n) * (CAST(n_yes_r2 AS REAL) / n)
+            )
       )
-      SELECT item, r1, r2, n,
-             CAST(n_agree AS REAL)/n AS po,
-             CASE
-               WHEN (1 - (1 - (CAST(n_yes_r1 AS REAL)/n) - (CAST(n_yes_r2 AS REAL)/n)
-                         + 2*(CAST(n_yes_r1 AS REAL)/n)*(CAST(n_yes_r2 AS REAL)/n))) = 0
-               THEN NULL
-               ELSE (
-                 (CAST(n_agree AS REAL)/n) -
-                 (1 - (CAST(n_yes_r1 AS REAL)/n) - (CAST(n_yes_r2 AS REAL)/n)
-                    + 2*(CAST(n_yes_r1 AS REAL)/n)*(CAST(n_yes_r2 AS REAL)/n))
-               ) / (
-                 1 - (1 - (CAST(n_yes_r1 AS REAL)/n) - (CAST(n_yes_r2 AS REAL)/n)
-                        + 2*(CAST(n_yes_r1 AS REAL)/n)*(CAST(n_yes_r2 AS REAL)/n))
-               )
-             END AS kappa
-      FROM per_pair;`);
+    END AS kappa
+  FROM per_pair;
+`);
 
     db.run(`
       CREATE VIEW IF NOT EXISTS human_ir_per_item_v AS
