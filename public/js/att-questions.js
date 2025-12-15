@@ -78,7 +78,7 @@ const mov1 = {
   button_label: "Weiter >",
   randomize_question_order: false,
   questions: [
-    {prompt: "Ich mag es wirklich.", name: 'mov11', labels: Zustimmung, required: true},
+    {prompt: "Ich mag Lesen wirklich.", name: 'mov11', labels: Zustimmung, required: true},
     {prompt: "Es macht mir Spaß zu lesen.", name: 'mov12', labels: Zustimmung, required: true},
     {prompt: "Ich lese gerne.", name: 'mov13', labels: Zustimmung, required: true},
     {prompt: "Ich finde Lesen faszinierend.", name: 'mov14', labels: Zustimmung, required: true},

@@ -4,3 +4,5 @@ data/test.dv
 node_modules/
 data/seed.json
 data/seed_data.json
+scripts/.RData
+scripts/.Rhistory

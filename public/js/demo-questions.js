@@ -209,28 +209,28 @@ const demo4 = {
   questions: [
     {
       prompt: "<p align='left'>Hast du einen <b>Schreibtisch</b> oder einen anderen Tisch nur für dich zu Hause?",
-      options: ["ja", "nein"],
+      options: ["nein", "ja"],
       horizontal: true,
       required: true,
       name: "po1",
     },
     {
       prompt: "<p align='left'>Hast du ein <b>eigenes Zimmer</b> zu Hause?",
-      options: ["ja", "nein"],
+      options: ["nein", "ja"],
       horizontal: true,
       required: true,
       name: "po2",
     },
     {
       prompt: "<p align='left'>Gibt es einen <b>Rasenmäher</b> bei dir zu Hause?",
-      options: ["ja", "nein"],
+      options: ["nein", "ja"],
       horizontal: true,
       required: true,
       name: "po3",
     },
     {
       prompt: "<p align='left'>Gibt es <b>zwei oder mehr Autos</b> bei dir zu Hause?",
-      options: ["ja", "nein"],
+      options: ["nein", "ja"],
       horizontal: true,
       required: true,
       name: "po4",

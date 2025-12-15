@@ -27,7 +27,7 @@ router.get("/api/theta", (req, res) => {
       r.subject_id,
       r.item,
       CASE WHEN r.score = 2 THEN 1 WHEN r.score = 1 THEN 0 ELSE 0 END AS score,
-      p.threshold_1 AS threshold
+      p.threshold_2 AS threshold
     FROM clean_responses r
     JOIN item_parameters p ON r.item = p.item
     WHERE r.subject_id = ?
